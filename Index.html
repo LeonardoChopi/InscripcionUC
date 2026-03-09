@@ -57,21 +57,27 @@
       </div>
       <div>
         <button class="example-toggle" onclick="toggleExample()">&#128196; Ver ejemplo de formato correcto</button>
-        <pre class="example-block" id="exampleBlock">const materias = [
-  { id: 1,  nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;,  dia: &quot;Miercoles&quot;, inicio: &quot;10:00&quot;, fin: &quot;11:30&quot; },
-  { id: 2,  nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;,  dia: &quot;Viernes&quot;,   inicio: &quot;10:00&quot;, fin: &quot;11:30&quot; },
-  { id: 3,  nombre: &quot;Calculo 1&quot;, tipo: &quot;Teorico&quot;,  grupo: &quot;Grupo 2&quot;, salon: &quot;Actos - 1er Piso&quot;, dia: &quot;Martes&quot;,    inicio: &quot;08:00&quot;, fin: &quot;09:30&quot; },
-];
+        <pre class="example-block" id="exampleBlock">
+Extrae datos de un cronograma de clases y conviértelos en un array JS llamado materias.
 
-// Campos requeridos por objeto:
-// id       -> numero unico
-// nombre   -> nombre de la materia
-// tipo     -> &quot;Teorico&quot; o &quot;Practico&quot;
-// grupo    -> ej: &quot;Grupo 1&quot;, &quot;Grupo A&quot;
-// salon    -> nombre del salon
-// dia      -> Lunes | Martes | Miercoles | Jueves | Viernes
-// inicio   -> formato &quot;HH:MM&quot;
-// fin      -> formato &quot;HH:MM&quot;</pre>
+Estructura de cada objeto:
+{ id, nombre, tipo, grupo, salon, dia, inicio, fin }
+
+Reglas:
+- Un objeto por cada día con horario.
+- id autoincremental.
+- nombre: asignatura de la tabla.
+- tipo: "Teorico" o "Practico".
+- grupo: nombre del grupo.
+- salon: "AULA - PISO" o "VIRTUAL".
+- dia: Lunes | Martes | Miercoles | Jueves | Viernes.
+- inicio y fin en formato HH:MM.
+
+Devuelve SOLO:
+const materias = [ ... ];
+
+Imagen a procesar: [ADJUNTAR IMAGEN]
+        </pre>
       </div>
     </div>
     <div class="modal-footer">

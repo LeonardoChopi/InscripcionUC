@@ -1,8 +1,14 @@
 /**
  * aviso-privacidad.js
  * Muestra un aviso de almacenamiento local cada vez que el usuario entra a la página.
- * 
- * Uso: <script src="aviso-privacidad.js"></script>
+ *
+ * USO CORRECTO:
+ *   <script src="aviso-privacidad.js"></script>
+ *
+ * IMPORTANTE: NO usar type="module". Este script debe cargarse como script clásico.
+ *   ❌  <script type="module" src="aviso-privacidad.js"></script>
+ *   ✅  <script src="aviso-privacidad.js"></script>
+ *
  * Colocar antes del cierre de </body>. No requiere dependencias externas.
  */
 
@@ -206,21 +212,31 @@
 
     // ── Lógica de cierre ────────────────────────────────────────────────────
     function cerrar() {
-      const noMostrar = document.getElementById('aviso-check').checked;
+      // Buscar el checkbox dentro del overlay ya montado, no con getElementById
+      var checkbox = overlay.querySelector('#aviso-check');
+      var noMostrar = checkbox ? checkbox.checked : false;
       if (noMostrar) {
         try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
       }
-      overlay.style.animation = 'aviso-fade-in 0.18s ease reverse';
+      overlay.style.transition = 'opacity 0.18s ease';
       overlay.style.opacity = '0';
-      setTimeout(() => overlay.remove(), 180);
+      setTimeout(function () {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }, 200);
     }
 
-    document.getElementById('aviso-btn').addEventListener('click', cerrar);
+    // Botón principal — buscar dentro del overlay, no globalmente
+    var btnAceptar = overlay.querySelector('#aviso-btn');
+    if (btnAceptar) btnAceptar.addEventListener('click', cerrar);
 
-    // Cerrar con ESC
-    document.addEventListener('keydown', function handler(e) {
-      if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', handler); }
-    });
+    // Cerrar con ESC — registrar después de que el modal ya está en el DOM
+    function escHandler(e) {
+      if (e.key === 'Escape') {
+        cerrar();
+        document.removeEventListener('keydown', escHandler);
+      }
+    }
+    document.addEventListener('keydown', escHandler);
   }
 
   // ── Punto de entrada ───────────────────────────────────────────────────────
