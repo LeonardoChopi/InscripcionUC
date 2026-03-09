@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscripción UC — Udelar</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
+</head>
+<body>
+
+<header>
+<script src="aviso.js"></script>
+
+  <div class="header-inner">
+    <div class="logo-mark">
+      <svg viewBox="0 0 26 26" fill="none">
+        <rect x="1" y="1" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="15" y="1" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="1" y="15" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="15" y="15" width="10" height="10" fill="#2e6da4"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Sistema de Inscripci&#243;n a Unidades Curriculares</h1>
+      <p>Universidad de la Rep&#250;blica &middot; Página no oficial</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-cargar-array" onclick="openModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Cargar array de UIs
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Cargar Unidades Curriculares</div>
+        <div class="modal-subtitle">Peg&#225; un array JavaScript con las materias para reemplazar los datos actuales.</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="code-label">Array de materias (JavaScript)</div>
+        <textarea class="code-area" id="arrayInput" placeholder="const materias = [&#10;  { id: 1, nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305&quot;, dia: &quot;Lunes&quot;, inicio: &quot;09:00&quot;, fin: &quot;11:00&quot; },&#10;  ...&#10;];"></textarea>
+      </div>
+      <div id="parseFeedback" class="parse-feedback"></div>
+      <div id="previewWrap" style="display:none">
+        <div class="code-label">Vista previa</div>
+        <div class="preview-chips" id="previewChips"></div>
+      </div>
+      <div>
+        <button class="example-toggle" onclick="toggleExample()">&#128196; Ver ejemplo de formato correcto</button>
+        <pre class="example-block" id="exampleBlock">const materias = [
+  { id: 1,  nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;,  dia: &quot;Miercoles&quot;, inicio: &quot;10:00&quot;, fin: &quot;11:30&quot; },
+  { id: 2,  nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;,  dia: &quot;Viernes&quot;,   inicio: &quot;10:00&quot;, fin: &quot;11:30&quot; },
+  { id: 3,  nombre: &quot;Calculo 1&quot;, tipo: &quot;Teorico&quot;,  grupo: &quot;Grupo 2&quot;, salon: &quot;Actos - 1er Piso&quot;, dia: &quot;Martes&quot;,    inicio: &quot;08:00&quot;, fin: &quot;09:30&quot; },
+];
+
+// Campos requeridos por objeto:
+// id       -> numero unico
+// nombre   -> nombre de la materia
+// tipo     -> &quot;Teorico&quot; o &quot;Practico&quot;
+// grupo    -> ej: &quot;Grupo 1&quot;, &quot;Grupo A&quot;
+// salon    -> nombre del salon
+// dia      -> Lunes | Martes | Miercoles | Jueves | Viernes
+// inicio   -> formato &quot;HH:MM&quot;
+// fin      -> formato &quot;HH:MM&quot;</pre>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-modal-apply" id="btnApply" onclick="applyArray()" disabled>Aplicar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="main">
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="section-title">Unidades Curriculares Disponibles</div>
+
+    <div class="controls">
+      <div class="search-row">
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input class="search-input" id="searchInput" type="text" placeholder="Buscar por nombre de materia...">
+        </div>
+        <button class="filter-btn" onclick="clearAllFilters()">&#10005; Limpiar filtros</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">D&#237;a:</span>
+        <div class="filter-group" id="filterDias"></div>
+        <div class="filter-sep"></div>
+        <span class="filter-label">Franja:</span>
+        <div class="filter-group" id="filterFranjas"></div>
+        <div class="filter-sep"></div>
+        <span class="filter-label">Tipo:</span>
+        <div class="filter-group" id="filterTipos"></div>
+        <div class="filter-sep"></div>
+        <span class="filter-label">Ver:</span>
+        <div class="filter-group" id="filterVer"></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Materia / Tipo / Grupo</th>
+            <th>Sal&#243;n</th>
+            <th>D&#237;a(s)</th>
+            <th>Horario</th>
+            <th>Acci&#243;n</th>
+          </tr>
+        </thead>
+        <tbody id="materiasTable"></tbody>
+      </table>
+      <div id="noResults" class="no-results" style="display:none">No se encontraron materias con los filtros aplicados.</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="enrolled-card">
+      <div class="enrolled-header">
+        <span>Materias Inscritas</span>
+        <span class="count-badge" id="enrolledCount">0</span>
+      </div>
+      <div id="enrolledList">
+        <div class="empty-enrolled">
+          <div class="icon">&#128203;</div>
+          <p>A&#250;n no te has inscrito<br>en ninguna materia.</p>
+        </div>
+      </div>
+    </div>
+    <div class="schedule-preview" id="schedulePreview" style="display:none">
+      <div class="schedule-header">Vista de Horario Semanal</div>
+      <div class="schedule-body" id="scheduleBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const materias = [
+  { id: 1,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 1",  salon: "305 - 3er Piso",    dia: "Miercoles", inicio: "10:00", fin: "11:30" },
+  { id: 2,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 1",  salon: "305 - 3er Piso",    dia: "Viernes",   inicio: "10:00", fin: "11:30" },
+  { id: 3,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 2",  salon: "312 - 3er Piso",    dia: "Miercoles", inicio: "11:30", fin: "13:00" },
+  { id: 4,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 2",  salon: "301 - 3er Piso",    dia: "Viernes",   inicio: "11:30", fin: "13:00" },
+  { id: 5,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 3",  salon: "B11 - 1er Piso",    dia: "Martes",    inicio: "10:00", fin: "11:30" },
+  { id: 6,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 3",  salon: "B11 - 1er Piso",    dia: "Jueves",    inicio: "10:00", fin: "11:30" },
+  { id: 7,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 4",  salon: "312 - 3er Piso",    dia: "Martes",    inicio: "10:00", fin: "11:30" },
+  { id: 8,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 4",  salon: "312 - 3er Piso",    dia: "Jueves",    inicio: "10:00", fin: "11:30" },
+  { id: 9,  nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 5",  salon: "102 - 1er Piso",    dia: "Miercoles", inicio: "16:00", fin: "17:30" },
+  { id: 10, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 5",  salon: "102 - 1er Piso",    dia: "Viernes",   inicio: "16:00", fin: "17:30" },
+  { id: 11, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 6",  salon: "501 - 5to Piso",    dia: "Martes",    inicio: "13:00", fin: "14:30" },
+  { id: 12, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 6",  salon: "501 - 5to Piso",    dia: "Jueves",    inicio: "13:00", fin: "14:30" },
+  { id: 13, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 7",  salon: "A12 - 1er Piso",    dia: "Martes",    inicio: "16:00", fin: "17:30" },
+  { id: 14, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 7",  salon: "B11 - 1er Piso",    dia: "Jueves",    inicio: "16:00", fin: "17:30" },
+  { id: 15, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 8",  salon: "Virtual 02",        dia: "Martes",    inicio: "19:30", fin: "21:00" },
+  { id: 16, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 8",  salon: "Virtual 01",        dia: "Viernes",   inicio: "19:30", fin: "21:00" },
+  { id: 17, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 9",  salon: "102 - 1er Piso",    dia: "Miercoles", inicio: "10:00", fin: "11:30" },
+  { id: 18, nombre: "Fisica 1", tipo: "Practico", grupo: "Grupo 9",  salon: "102 - 1er Piso",    dia: "Viernes",   inicio: "10:00", fin: "11:30" },
+  { id: 19, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 1",  salon: "307 - 3er Piso",    dia: "Miercoles", inicio: "11:30", fin: "13:00" },
+  { id: 20, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 1",  salon: "307 - 3er Piso",    dia: "Viernes",   inicio: "11:30", fin: "13:00" },
+  { id: 21, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 2",  salon: "Actos - 1er Piso",  dia: "Martes",    inicio: "08:00", fin: "09:30" },
+  { id: 22, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 2",  salon: "Actos - 1er Piso",  dia: "Jueves",    inicio: "08:00", fin: "09:30" },
+  { id: 23, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 3",  salon: "303 - 3er Piso",    dia: "Lunes",     inicio: "16:00", fin: "17:30" },
+  { id: 24, nombre: "Fisica 1", tipo: "Teorico",  grupo: "Grupo 3",  salon: "303 - 3er Piso",    dia: "Miercoles", inicio: "16:00", fin: "17:30" },
+  { id: 25, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 1", salon: "C22 - 2do Piso", dia: "Lunes",     inicio: "08:00", fin: "09:30" },
+  { id: 26, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 1", salon: "C22 - 2do Piso", dia: "Miercoles", inicio: "08:00", fin: "11:00" },
+  { id: 27, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 1", salon: "C22 - 2do Piso", dia: "Viernes",   inicio: "08:00", fin: "09:30" },
+  { id: 28, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 2", salon: "B23 - 2do Piso", dia: "Lunes",     inicio: "09:30", fin: "11:00" },
+  { id: 29, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 2", salon: "A12 - 1er Piso", dia: "Miercoles", inicio: "09:30", fin: "11:00" },
+  { id: 30, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 2", salon: "B23 - 2do Piso", dia: "Viernes",   inicio: "09:30", fin: "12:30" },
+  { id: 31, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 3", salon: "A21 - 2do Piso", dia: "Martes",    inicio: "09:30", fin: "11:00" },
+  { id: 32, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 3", salon: "A21 - 2do Piso", dia: "Jueves",    inicio: "09:30", fin: "11:00" },
+  { id: 33, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 3", salon: "A21 - 2do Piso", dia: "Viernes",   inicio: "08:00", fin: "11:00" },
+  { id: 34, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 4", salon: "A12 - 1er Piso", dia: "Lunes",     inicio: "13:00", fin: "14:30" },
+  { id: 35, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 4", salon: "A12 - 1er Piso", dia: "Miercoles", inicio: "13:00", fin: "14:30" },
+  { id: 36, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 4", salon: "B11 - 1er Piso", dia: "Viernes",   inicio: "13:00", fin: "16:00" },
+  { id: 37, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 5", salon: "A21 - 2do Piso", dia: "Lunes",     inicio: "14:30", fin: "16:00" },
+  { id: 38, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 5", salon: "C22 - 2do Piso", dia: "Miercoles", inicio: "14:30", fin: "16:00" },
+  { id: 39, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 5", salon: "A21 - 2do Piso", dia: "Viernes",   inicio: "14:30", fin: "17:30" },
+  { id: 40, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 6", salon: "A12 - 1er Piso", dia: "Martes",    inicio: "14:30", fin: "16:00" },
+  { id: 41, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 6", salon: "A12 - 1er Piso", dia: "Jueves",    inicio: "14:30", fin: "16:00" },
+  { id: 42, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 6", salon: "A12 - 1er Piso", dia: "Viernes",   inicio: "13:00", fin: "16:00" },
+  { id: 43, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 7", salon: "303 - 3er Piso", dia: "Lunes",     inicio: "18:00", fin: "19:30" },
+  { id: 44, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 7", salon: "312 - 3er Piso", dia: "Miercoles", inicio: "18:00", fin: "21:00" },
+  { id: 45, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 7", salon: "312 - 3er Piso", dia: "Viernes",   inicio: "18:00", fin: "19:30" },
+  { id: 46, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 8", salon: "Virtual 06",     dia: "Martes",    inicio: "19:30", fin: "21:00" },
+  { id: 47, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 8", salon: "Virtual 06",     dia: "Jueves",    inicio: "19:30", fin: "21:00" },
+  { id: 48, nombre: "Matematica Inicial", tipo: "Teorico", grupo: "Grupo 8", salon: "Virtual 04",     dia: "Viernes",   inicio: "18:00", fin: "21:00" },
+  { id: 49, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 1",  salon: "303 - 3er Piso",    dia: "Lunes",    inicio: "09:30", fin: "12:30" },
+  { id: 50, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 10", salon: "Actos - 1er Piso",  dia: "Jueves",   inicio: "14:30", fin: "17:30" },
+  { id: 51, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 11", salon: "312 - 3er Piso",    dia: "Jueves",   inicio: "17:30", fin: "20:30" },
+  { id: 52, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 12", salon: "Actos - 1er Piso",  dia: "Lunes",    inicio: "17:30", fin: "20:30" },
+  { id: 53, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 2",  salon: "115 - Bandejas N.", dia: "Lunes",    inicio: "09:30", fin: "12:30" },
+  { id: 54, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 3",  salon: "303 - 3er Piso",    dia: "Lunes",    inicio: "13:00", fin: "16:00" },
+  { id: 55, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 4",  salon: "Actos - 1er Piso",  dia: "Lunes",    inicio: "17:30", fin: "20:30" },
+  { id: 56, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 5",  salon: "305 - 3er Piso",    dia: "Martes",   inicio: "09:30", fin: "12:30" },
+  { id: 57, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 6",  salon: "312 - 3er Piso",    dia: "Martes",   inicio: "14:30", fin: "17:30" },
+  { id: 58, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 7",  salon: "Actos - 1er Piso",  dia: "Miercoles",inicio: "09:30", fin: "12:30" },
+  { id: 59, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 8",  salon: "305 - 3er Piso",    dia: "Jueves",   inicio: "09:30", fin: "12:30" },
+  { id: 60, nombre: "Int. a la Computacion", tipo: "Practico", grupo: "Grupo 9",  salon: "312 - 3er Piso",    dia: "Jueves",   inicio: "13:00", fin: "16:00" },
+  { id: 61, nombre: "Int. a la Computacion", tipo: "Teorico",  grupo: "Grupo 1",  salon: "Actos - 1er Piso",  dia: "Martes",   inicio: "17:30", fin: "19:00" },
+];
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const LS_KEY = 'udelar_v3';
+const LS_KEY_MATERIAS = 'udelar_v3_materias';
+const DAY_ORDER = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+const DAY_DISPLAY = { Lunes:'Lunes', Martes:'Martes', Miercoles:'Mi\u00e9rcoles', Jueves:'Jueves', Viernes:'Viernes' };
+const FRANJAS = {
+  manana:  { label: 'Ma\u00f1ana', min: 0,    max: 720  },
+  tarde:   { label: 'Tarde',      min: 720,  max: 1080 },
+  noche:   { label: 'Noche',      min: 1080, max: 1440 },
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let enrolled = [];
+let filters = { dia: 'todos', franja: 'todos', tipo: 'todos', ver: 'todos' };
+let searchQuery = '';
+
+// ============================================================
+// PERSISTENCE
+// ============================================================
+function saveToStorage() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(enrolled.map(e => e.id))); } catch(e) {}
+}
+function saveMaterias() {
+  try { localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(materias)); } catch(e) {}
+}
+function loadMaterias() {
+  try {
+    const raw = localStorage.getItem(LS_KEY_MATERIAS);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved) || saved.length === 0) return false;
+    materias.length = 0;
+    saved.forEach(m => materias.push(m));
+    return true;
+  } catch(e) { return false; }
+}
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    enrolled = JSON.parse(raw).map(id => materias.find(m => m.id === id)).filter(Boolean);
+  } catch(e) { enrolled = []; }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function timeToMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+
+function getFranja(inicio) {
+  const m = timeToMin(inicio);
+  if (m < 720) return 'manana';
+  if (m < 1080) return 'tarde';
+  return 'noche';
+}
+
+function hasTimeConflict(m) {
+  return enrolled.some(e =>
+    e.dia === m.dia &&
+    timeToMin(m.inicio) < timeToMin(e.fin) &&
+    timeToMin(m.fin) > timeToMin(e.inicio)
+  );
+}
+function getTimeConflict(m) {
+  return enrolled.find(e =>
+    e.dia === m.dia &&
+    timeToMin(m.inicio) < timeToMin(e.fin) &&
+    timeToMin(m.fin) > timeToMin(e.inicio)
+  );
+}
+function isEnrolled(m) { return enrolled.some(e => e.id === m.id); }
+
+// Bloquear otro grupo del mismo nombre+tipo
+function isDuplicateMateria(m) {
+  return enrolled.some(e => e.nombre === m.nombre && e.tipo === m.tipo && e.grupo !== m.grupo);
+}
+function getDuplicateMateria(m) {
+  return enrolled.find(e => e.nombre === m.nombre && e.tipo === m.tipo && e.grupo !== m.grupo);
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function inscribir(id) {
+  const m = materias.find(x => x.id === id);
+  if (!m || isEnrolled(m)) return;
+  if (isDuplicateMateria(m)) {
+    const dup = getDuplicateMateria(m);
+    showToast('Ya inscrito en ' + m.nombre + ' (' + m.tipo + ') \u2014 ' + dup.grupo, 'warning');
+    return;
+  }
+  if (hasTimeConflict(m)) {
+    const c = getTimeConflict(m);
+    showToast('Conflicto con "' + c.nombre + '" \u2014 ' + c.dia + ' ' + c.inicio + '\u2013' + c.fin, 'error');
+    return;
+  }
+  enrolled.push(m);
+  saveToStorage();
+  showToast('Inscrito: ' + m.nombre + ' \u00b7 ' + m.tipo + ' \u00b7 ' + m.grupo, 'success');
+  render();
+}
+
+function desinscribir(id) {
+  const m = enrolled.find(e => e.id === id);
+  enrolled = enrolled.filter(e => e.id !== id);
+  saveToStorage();
+  if (m) showToast('Desinscrito: ' + m.nombre + ' \u00b7 ' + m.grupo, 'warning');
+  render();
+}
+
+// ============================================================
+// BUILD GROUP ROWS (collapse multiple clases del mismo grupo en 1 fila)
+// ============================================================
+function buildGroupRows() {
+  const map = new Map();
+  for (const m of materias) {
+    const key = m.nombre + '||' + m.tipo + '||' + m.grupo;
+    if (!map.has(key)) map.set(key, { ...m, clases: [m] });
+    else map.get(key).clases.push(m);
+  }
+  return [...map.values()];
+}
+const GROUP_ROWS = buildGroupRows();
+
+// ============================================================
+// FILTER
+// ============================================================
+function getVisibleRows() {
+  let rows = GROUP_ROWS;
+
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    rows = rows.filter(r => r.nombre.toLowerCase().includes(q));
+  }
+  if (filters.dia !== 'todos') {
+    rows = rows.filter(r => r.clases.some(c => c.dia === filters.dia));
+  }
+  if (filters.franja !== 'todos') {
+    const f = FRANJAS[filters.franja];
+    rows = rows.filter(r => r.clases.some(c => timeToMin(c.inicio) >= f.min && timeToMin(c.inicio) < f.max));
+  }
+  if (filters.tipo !== 'todos') {
+    rows = rows.filter(r => r.tipo === filters.tipo);
+  }
+  if (filters.ver === 'inscritas') {
+    rows = rows.filter(r => r.clases.some(c => isEnrolled(c)));
+  } else if (filters.ver === 'disponibles') {
+    rows = rows.filter(r => {
+      const anyEnrolled = r.clases.some(c => isEnrolled(c));
+      const anyDup = isDuplicateMateria(r);
+      const anyConflict = r.clases.some(c => hasTimeConflict(c));
+      return !anyEnrolled && !anyDup && !anyConflict;
+    });
+  }
+  return rows;
+}
+
+// ============================================================
+// RENDER FILTERS
+// ============================================================
+function renderFilters() {
+  const dias = DAY_ORDER.filter(d => materias.some(m => m.dia === d));
+  document.getElementById('filterDias').innerHTML =
+    [{ key:'todos', label:'Todos' }, ...dias.map(d => ({ key:d, label: DAY_DISPLAY[d]||d }))]
+    .map(f => '<button class="filter-btn' + (filters.dia===f.key?' active':'') + '" onclick="setFilter(\'dia\',\'' + f.key + '\')">' + f.label + '</button>')
+    .join('');
+
+  document.getElementById('filterFranjas').innerHTML =
+    [{ key:'todos', label:'Todas' }, { key:'manana', label:'Ma\u00f1ana' }, { key:'tarde', label:'Tarde' }, { key:'noche', label:'Noche' }]
+    .map(f => '<button class="filter-btn' + (filters.franja===f.key?' active-teal':'') + '" onclick="setFilter(\'franja\',\'' + f.key + '\')">' + f.label + '</button>')
+    .join('');
+
+  document.getElementById('filterTipos').innerHTML =
+    [{ key:'todos', label:'Todos' }, { key:'Teorico', label:'Te\u00f3rico' }, { key:'Practico', label:'Pr\u00e1ctico' }]
+    .map(f => '<button class="filter-btn' + (filters.tipo===f.key?' active-purple':'') + '" onclick="setFilter(\'tipo\',\'' + f.key + '\')">' + f.label + '</button>')
+    .join('');
+
+  document.getElementById('filterVer').innerHTML =
+    [{ key:'todos', label:'Todos' }, { key:'disponibles', label:'Disponibles' }, { key:'inscritas', label:'Inscritas' }]
+    .map(f => '<button class="filter-btn' + (filters.ver===f.key?' active':'') + '" onclick="setFilter(\'ver\',\'' + f.key + '\')">' + f.label + '</button>')
+    .join('');
+}
+
+function setFilter(type, val) { filters[type] = val; render(); }
+function clearAllFilters() {
+  filters = { dia:'todos', franja:'todos', tipo:'todos', ver:'todos' };
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  render();
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
+function renderTable() {
+  const tbody = document.getElementById('materiasTable');
+  const noRes = document.getElementById('noResults');
+  const rows = getVisibleRows();
+  if (rows.length === 0) { tbody.innerHTML = ''; noRes.style.display = 'block'; return; }
+  noRes.style.display = 'none';
+
+  tbody.innerHTML = rows.map(row => {
+    const enrolledEntry = enrolled.find(e => e.nombre===row.nombre && e.tipo===row.tipo && e.grupo===row.grupo);
+    const alreadyEnrolled = !!enrolledEntry;
+    const dupMateria = !alreadyEnrolled && isDuplicateMateria(row);
+    const conflictingClass = (!alreadyEnrolled && !dupMateria)
+      ? row.clases.find(c => hasTimeConflict(c)) : null;
+    const hasConflict = !!conflictingClass;
+    const disabled = dupMateria || hasConflict;
+
+    const clasesStr = row.clases
+      .slice().sort((a,b) => DAY_ORDER.indexOf(a.dia)-DAY_ORDER.indexOf(b.dia))
+      .map(c => (DAY_DISPLAY[c.dia]||c.dia) + ': ' + c.inicio + '\u2013' + c.fin)
+      .join('<br>');
+    const diasStr = [...new Set(row.clases.map(c=>c.dia))]
+      .sort((a,b) => DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b))
+      .map(d => '<span class="day-pill">' + (DAY_DISPLAY[d]||d) + '</span>')
+      .join(' ');
+
+    const tipoClass = row.tipo.toLowerCase();
+    const tipoLabel = row.tipo === 'Teorico' ? 'Te\u00f3rico' : 'Pr\u00e1ctico';
+
+    let action;
+    if (alreadyEnrolled) {
+      action = '<span class="enrolled-badge">&#10003; Inscrito</span>';
+    } else if (dupMateria) {
+      const dup = getDuplicateMateria(row);
+      action = '<button class="btn-disabled" disabled>No disponible</button><span class="conflict-badge">&#8618; Ya inscrito: ' + dup.grupo + '</span>';
+    } else if (hasConflict) {
+      const c = getTimeConflict(conflictingClass);
+      action = '<button class="btn-disabled" disabled>No disponible</button><span class="conflict-badge">&#9888; Conflicto: ' + c.nombre + ' \u2014 ' + (DAY_DISPLAY[conflictingClass.dia]||conflictingClass.dia) + '</span>';
+    } else {
+      action = '<button class="btn-inscribir" onclick="inscribir(' + row.clases[0].id + ')">Inscribirse</button>';
+    }
+
+    return '<tr class="' + (disabled?'disabled-row':'') + '">' +
+      '<td><div class="nombre-cell">' + row.nombre + '</div>' +
+        '<div class="sub-tags"><span class="tipo-tag ' + tipoClass + '">' + tipoLabel + '</span><span class="grupo-tag">' + row.grupo + '</span></div></td>' +
+      '<td class="salon-cell">' + row.salon + '</td>' +
+      '<td>' + diasStr + '</td>' +
+      '<td class="horario-cell">' + clasesStr + '</td>' +
+      '<td>' + action + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ============================================================
+// RENDER SIDEBAR
+// ============================================================
+function renderEnrolled() {
+  const list = document.getElementById('enrolledList');
+  document.getElementById('enrolledCount').textContent = enrolled.length;
+  if (enrolled.length === 0) {
+    list.innerHTML = '<div class="empty-enrolled"><div class="icon">&#128203;</div><p>A\u00fan no te has inscrito<br>en ninguna materia.</p></div>';
+    return;
+  }
+  list.innerHTML = enrolled.map(e => {
+    const tc = e.tipo.toLowerCase();
+    const tl = e.tipo === 'Teorico' ? 'Te\u00f3rico' : 'Pr\u00e1ctico';
+    return '<div class="enrolled-item">' +
+      '<div class="enrolled-info">' +
+        '<h4>' + e.nombre + '</h4>' +
+        '<div class="enrolled-meta" style="margin-bottom:3px"><span class="tipo-tag ' + tc + '" style="font-size:0.61rem">' + tl + '</span> &nbsp;' + e.grupo + '</div>' +
+        '<div class="enrolled-meta">' + (DAY_DISPLAY[e.dia]||e.dia) + ' &middot; ' + e.inicio + '\u2013' + e.fin + ' &middot; ' + e.salon + '</div>' +
+      '</div>' +
+      '<button class="btn-desinscribir" onclick="desinscribir(' + e.id + ')" title="Desinscribirse">&#10005;</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderSchedule() {
+  const preview = document.getElementById('schedulePreview');
+  const body = document.getElementById('scheduleBody');
+  if (enrolled.length === 0) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  const byDay = {};
+  enrolled.forEach(e => { if (!byDay[e.dia]) byDay[e.dia] = []; byDay[e.dia].push(e); });
+  body.innerHTML = DAY_ORDER.filter(d => byDay[d]).map(d =>
+    '<div class="day-group"><div class="day-label">' + (DAY_DISPLAY[d]||d) + '</div>' +
+    byDay[d].sort((a,b)=>timeToMin(a.inicio)-timeToMin(b.inicio)).map(e =>
+      '<div class="time-block ' + e.tipo.toLowerCase() + '">' +
+        '<div class="tb-name">' + e.nombre + '</div>' +
+        '<div class="tb-meta ' + e.tipo.toLowerCase() + '">' + (e.tipo==='Teorico'?'Te\u00f3rico':'Pr\u00e1ctico') + ' &middot; ' + e.grupo + ' &middot; ' + e.inicio + '\u2013' + e.fin + '</div>' +
+      '</div>'
+    ).join('') + '</div>'
+  ).join('');
+}
+
+// ============================================================
+// RENDER STATS
+// ============================================================
+function renderStats() {
+  const uniqueGroups = new Set(materias.map(m => m.nombre+'||'+m.tipo+'||'+m.grupo)).size;
+  const inscritas = enrolled.length;
+  const disponibles = [...new Set(materias.map(m => m.nombre+'||'+m.tipo+'||'+m.grupo))]
+    .filter(key => {
+      const [nombre,tipo,grupo] = key.split('||');
+      const rep = materias.find(m => m.nombre===nombre && m.tipo===tipo && m.grupo===grupo);
+      if (!rep) return false;
+      return !isEnrolled(rep) && !isDuplicateMateria(rep) && !hasTimeConflict(rep);
+    }).length;
+  document.getElementById('statsBar').innerHTML =
+    '<div class="stat"><span class="stat-num">' + uniqueGroups + '</span><span class="stat-label">Grupos totales</span></div>' +
+    '<div class="stat"><span class="stat-num">' + inscritas + '</span><span class="stat-label">Inscripciones activas</span></div>' +
+    '<div class="stat"><span class="stat-num">' + disponibles + '</span><span class="stat-label">Sin restricciones</span></div>' +
+    '<div class="stat"><span class="stat-num" style="font-size:0.78rem;color:' + (inscritas>0?'var(--green)':'var(--text-muted)') + '">' + (inscritas>0?'&#128190; Guardado':'\u2014') + '</span><span class="stat-label">Persistencia</span></div>';
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  renderFilters();
+  renderTable();
+  renderEnrolled();
+  renderSchedule();
+  renderStats();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type||'success') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+document.getElementById('searchInput').addEventListener('input', function() {
+  searchQuery = this.value.trim();
+  render();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+const materiasLoaded = loadMaterias();
+if (materiasLoaded) {
+  GROUP_ROWS.length = 0;
+  buildGroupRows().forEach(r => GROUP_ROWS.push(r));
+}
+loadFromStorage();
+render();
+if (materiasLoaded && enrolled.length > 0) {
+  showToast('\u2713 Datos restaurados: ' + new Set(materias.map(m=>m.nombre)).size + ' materia(s), ' + enrolled.length + ' inscripci\u00f3n(es)', 'success');
+} else if (materiasLoaded) {
+  showToast('\u2713 Array de materias restaurado (' + new Set(materias.map(m=>m.nombre)).size + ' materias)', 'success');
+} else if (enrolled.length > 0) {
+  showToast('Se cargaron ' + enrolled.length + ' inscripci\u00f3n(es) guardadas', 'success');
+}
+
+// ============================================================
+// MODAL — CARGAR ARRAY
+// ============================================================
+let parsedArray = null;
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('arrayInput').value = '';
+  document.getElementById('parseFeedback').className = 'parse-feedback';
+  document.getElementById('parseFeedback').textContent = '';
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('btnApply').disabled = true;
+  parsedArray = null;
+  setTimeout(() => document.getElementById('arrayInput').focus(), 120);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function toggleExample() {
+  document.getElementById('exampleBlock').classList.toggle('visible');
+}
+
+document.getElementById('arrayInput').addEventListener('input', function() {
+  parseArrayInput(this.value);
+});
+
+function parseArrayInput(raw) {
+  const feedback = document.getElementById('parseFeedback');
+  const previewWrap = document.getElementById('previewWrap');
+  const btnApply = document.getElementById('btnApply');
+  const textarea = document.getElementById('arrayInput');
+  feedback.className = 'parse-feedback';
+  feedback.textContent = '';
+  previewWrap.style.display = 'none';
+  btnApply.disabled = true;
+  parsedArray = null;
+  textarea.classList.remove('error-state');
+
+  const trimmed = raw.trim();
+  if (!trimmed) return;
+
+  let jsonLike = trimmed.replace(/^(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;?\s*$/, '');
+
+  if (!jsonLike.startsWith('[')) {
+    feedback.className = 'parse-feedback err';
+    feedback.textContent = 'Error: El contenido debe ser un array que empiece con [';
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  let result;
+  try {
+    result = Function('"use strict"; return (' + jsonLike + ')')();
+  } catch(e) {
+    feedback.className = 'parse-feedback err';
+    feedback.textContent = 'Error de sintaxis: ' + e.message;
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  if (!Array.isArray(result) || result.length === 0) {
+    feedback.className = 'parse-feedback err';
+    feedback.textContent = !Array.isArray(result) ? 'Error: el resultado debe ser un Array.' : 'El array est\u00e1 vac\u00edo.';
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  const required = ['id','nombre','tipo','grupo','salon','dia','inicio','fin'];
+  const invalid = result.filter(m => required.some(f => m[f] === undefined || m[f] === null || String(m[f]).trim() === ''));
+  if (invalid.length > 0) {
+    feedback.className = 'parse-feedback err';
+    feedback.textContent = invalid.length + ' objeto(s) con campos faltantes. Requeridos: ' + required.join(', ');
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  parsedArray = result;
+  const nombres = [...new Set(result.map(m => m.nombre))];
+  const tipos = [...new Set(result.map(m => m.tipo))];
+  const grupos = new Set(result.map(m => m.nombre+'||'+m.tipo+'||'+m.grupo)).size;
+
+  feedback.className = 'parse-feedback ok';
+  feedback.textContent = '\u2713 Array v\u00e1lido: ' + result.length + ' registros \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u00fanicos.';
+
+  const chips = document.getElementById('previewChips');
+  chips.innerHTML =
+    nombres.map(n => '<span class="preview-chip">' + n + '</span>').join('') +
+    tipos.map(t => '<span class="preview-chip" style="background:' + (t==='Teorico'?'var(--purple-bg)':'var(--teal-bg)') + ';color:' + (t==='Teorico'?'var(--purple)':'var(--teal)') + ';border-color:' + (t==='Teorico'?'var(--purple-border)':'var(--teal-border)') + '">' + t + '</span>').join('');
+  previewWrap.style.display = 'block';
+  btnApply.disabled = false;
+}
+
+function applyArray() {
+  if (!parsedArray) return;
+  materias.length = 0;
+  parsedArray.forEach(m => materias.push(m));
+  saveMaterias();
+  GROUP_ROWS.length = 0;
+  buildGroupRows().forEach(r => GROUP_ROWS.push(r));
+  enrolled = [];
+  saveToStorage();
+  filters = { dia:'todos', franja:'todos', tipo:'todos', ver:'todos' };
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  closeModal();
+  render();
+  showToast('\u2713 Cargadas ' + materias.length + ' clases de ' + new Set(materias.map(m=>m.nombre)).size + ' materia(s)', 'success');
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
