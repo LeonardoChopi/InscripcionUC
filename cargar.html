@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargar Array de Materias — Udelar</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stylecargar.css">
+<link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo-mark">
+      <svg viewBox="0 0 26 26" fill="none">
+        <rect x="1" y="1" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="15" y="1" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="1" y="15" width="10" height="10" fill="#1a3a5c"/>
+        <rect x="15" y="15" width="10" height="10" fill="#2e6da4"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Cargar Array de Unidades Curriculares</h1>
+      <p>Udelar &middot; Editor de datos</p>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="btn-back">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al sistema
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- MAIN: EDITOR -->
+  <div>
+    <div class="section-title" style="margin-bottom:16px">Editor de array</div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Pegar array JavaScript</div>
+        <div class="card-subtitle">El array se valida en tiempo real mientras escribís o pegás el contenido.</div>
+      </div>
+      <div class="card-body">
+        <div class="code-label">Contenido del array</div>
+        <textarea class="code-area" id="arrayInput"
+          placeholder="const materias = [&#10;  { id: 1, nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;, dia: &quot;Lunes&quot;, inicio: &quot;09:00&quot;, fin: &quot;11:00&quot; },&#10;  ...&#10;];"></textarea>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="preview-section" id="previewSection">
+          <div class="code-label">Vista previa de materias detectadas</div>
+          <div class="chips" id="previewChips"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-apply" id="btnApply" onclick="applyArray()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Guardar y aplicar
+          </button>
+          <button class="btn-clear" onclick="clearInput()">Limpiar</button>
+        </div>
+
+        <div class="success-banner" id="successBanner">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+          <div class="success-banner-text">
+            <h4 id="successTitle">Array guardado correctamente</h4>
+            <p id="successDesc">Los datos fueron almacenados en este dispositivo.</p>
+            <a href="index.html" class="btn-go-home">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
+              Ir al sistema de inscripci&#243;n
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR: REFERENCE -->
+  <div>
+    <div class="section-title" style="margin-bottom:16px">Referencia</div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="info-block">
+        <div class="info-block-title">Campos requeridos por objeto</div>
+        <div class="field-list">
+          <div class="field-item"><span class="field-name">id</span><span class="field-desc">N&#250;mero &#250;nico autoincremental</span></div>
+          <div class="field-item"><span class="field-name">nombre</span><span class="field-desc">Nombre de la asignatura</span></div>
+          <div class="field-item"><span class="field-name">tipo</span><span class="field-desc">"Teorico" o "Practico"</span></div>
+          <div class="field-item"><span class="field-name">grupo</span><span class="field-desc">"Grupo 1", "Grupo A", etc.</span></div>
+          <div class="field-item"><span class="field-name">salon</span><span class="field-desc">"305 - 3er Piso" o "Virtual"</span></div>
+          <div class="field-item"><span class="field-name">dia</span><span class="field-desc">Lunes | Martes | Miercoles | Jueves | Viernes</span></div>
+          <div class="field-item"><span class="field-name">inicio</span><span class="field-desc">Hora en formato "HH:MM"</span></div>
+          <div class="field-item"><span class="field-name">fin</span><span class="field-desc">Hora en formato "HH:MM"</span></div>
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="info-block-title">Ejemplo m&#237;nimo</div>
+        <div class="example-mini">const materias = [
+  {
+    id: 1,
+    nombre: "Fisica 1",
+    tipo: "Practico",
+    grupo: "Grupo 1",
+    salon: "305 - 3er Piso",
+    dia: "Miercoles",
+    inicio: "10:00",
+    fin: "11:30"
+  },
+];</div>
+      </div>
+      <div class="info-block">
+        <div class="info-block-title">Notas</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
+          Un grupo con clases en m&#250;ltiples d&#237;as necesita <strong>un objeto por cada d&#237;a</strong>.
+          El sistema los agrupa autom&#225;ticamente en una fila por grupo.
+          <br><br>
+          Pod&#233;s generar el array con IA usando el prompt en la p&#225;gina principal,
+          pesta&#241;a <strong>"C&#243;mo generar mi array"</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="info-block">
+        <div class="info-block-title">&#9432; Sobre el almacenamiento</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
+          El array se guarda en <code style="font-family:'IBM Plex Mono',monospace;font-size:0.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">localStorage</code>
+          de este navegador. Los datos <strong>no se env&#237;an a ning&#250;n servidor</strong>.
+          <br><br>
+          No ingreses datos sensibles como contrase&#241;as o informaci&#243;n personal.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const LS_KEY_MATERIAS = 'udelar_v3_materias';
+const REQUIRED_FIELDS = ['id','nombre','tipo','grupo','salon','dia','inicio','fin'];
+let parsedArray = null;
+
+// ── Parse en tiempo real ──────────────────────────────────────────────────
+document.getElementById('arrayInput').addEventListener('input', function() {
+  parseInput(this.value);
+});
+
+function parseInput(raw) {
+  const feedback     = document.getElementById('feedback');
+  const previewSec   = document.getElementById('previewSection');
+  const btnApply     = document.getElementById('btnApply');
+  const textarea     = document.getElementById('arrayInput');
+  const successBanner= document.getElementById('successBanner');
+
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  previewSec.classList.remove('visible');
+  btnApply.disabled = true;
+  parsedArray = null;
+  textarea.classList.remove('error-state','ok-state');
+  successBanner.classList.remove('visible');
+
+  const trimmed = raw.trim();
+  if (!trimmed) return;
+
+  // Extraer el array: acepta [ ... ] o const/let/var x = [ ... ];
+  var jsonLike = trimmed.replace(/^(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '').trim();
+
+  if (!jsonLike.startsWith('[')) {
+    feedback.className = 'feedback err';
+    feedback.textContent = 'Error: el contenido debe ser un array que empiece con [';
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  var result;
+  try {
+    result = Function('"use strict"; return (' + jsonLike + ')')();
+  } catch(e) {
+    feedback.className = 'feedback err';
+    feedback.textContent = 'Error de sintaxis: ' + e.message;
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  if (!Array.isArray(result) || result.length === 0) {
+    feedback.className = 'feedback err';
+    feedback.textContent = !Array.isArray(result) ? 'Error: el resultado debe ser un Array.' : 'El array est\u00e1 vac\u00edo.';
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  var invalid = result.filter(function(m) {
+    return REQUIRED_FIELDS.some(function(f) { return m[f] === undefined || m[f] === null || String(m[f]).trim() === ''; });
+  });
+  if (invalid.length > 0) {
+    feedback.className = 'feedback err';
+    feedback.textContent = invalid.length + ' objeto(s) con campos faltantes. Requeridos: ' + REQUIRED_FIELDS.join(', ');
+    textarea.classList.add('error-state');
+    return;
+  }
+
+  // Todo OK
+  parsedArray = result;
+  textarea.classList.add('ok-state');
+
+  var nombres = [...new Set(result.map(function(m) { return m.nombre; }))];
+  var tipos   = [...new Set(result.map(function(m) { return m.tipo; }))];
+  var grupos  = new Set(result.map(function(m) { return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+
+  feedback.className = 'feedback ok';
+  feedback.textContent = '\u2713 Array v\u00e1lido \u00b7 ' + result.length + ' registros \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u00fanicos';
+
+  var chips = document.getElementById('previewChips');
+  chips.innerHTML =
+    nombres.map(function(n) { return '<span class="chip">'+n+'</span>'; }).join('') +
+    tipos.map(function(t) { return '<span class="chip '+(t==='Teorico'?'teorico':'practico')+'">'+t+'</span>'; }).join('');
+  previewSec.classList.add('visible');
+  btnApply.disabled = false;
+}
+
+// ── Aplicar ───────────────────────────────────────────────────────────────
+function applyArray() {
+  if (!parsedArray) return;
+  try {
+    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(parsedArray));
+    // Limpiar inscripciones previas ya que los IDs pueden haber cambiado
+    localStorage.removeItem('udelar_v3');
+  } catch(e) {
+    alert('No se pudo guardar en localStorage: ' + e.message);
+    return;
+  }
+
+  var nombres = [...new Set(parsedArray.map(function(m) { return m.nombre; }))];
+  var grupos  = new Set(parsedArray.map(function(m) { return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+
+  document.getElementById('successTitle').textContent = '\u2713 Array guardado correctamente';
+  document.getElementById('successDesc').textContent  =
+    parsedArray.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
+
+  document.getElementById('successBanner').classList.add('visible');
+  document.getElementById('btnApply').disabled = true;
+
+  // Marcar en sessionStorage para que index.html muestre el toast
+  sessionStorage.setItem('array_recien_cargado', '1');
+}
+
+// ── Limpiar ───────────────────────────────────────────────────────────────
+function clearInput() {
+  document.getElementById('arrayInput').value = '';
+  parseInput('');
+}
+</script>
+<script src="aviso-privacidad.js"></script>
+</body>
+</html>
