@@ -2,6 +2,8 @@
 
 Aplicación web estática para explorar horarios de materias y armar tu inscripción sin conflictos. Funciona completamente en el navegador, sin servidor ni base de datos.
 
+Repositorio GitHub del proyecto: https://github.com/LeonardoChopi/InscripcionUC 
+
 ---
 
 ## Archivos del proyecto
