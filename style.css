@@ -185,4 +185,144 @@
   .toast.error { background: var(--red); color: white; }
   .toast.warning { background: var(--yellow); color: white; }
 
-  @media (max-width: 960px) { .container { grid-template-columns: 1fr; } .sidebar { position: static; } .header-inner, .nav-tabs-inner, .container, .panel-full { padding-left: 16px; padding-right: 16px; } }
+  @media (max-width: 960px) {
+    .container {
+      grid-template-columns: 1fr;
+      padding-left: 10px;
+      padding-right: 10px;
+      gap: 0;
+    }
+    .sidebar {
+      position: static;
+      margin-top: 24px;
+      width: 100%;
+    }
+    .header-inner, .nav-tabs-inner, .panel-full {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+    .main, .panel-full {
+      width: 100%;
+      min-width: 0;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    table {
+      min-width: 600px;
+      font-size: 0.95rem;
+    }
+    thead th, tbody td {
+      padding: 8px 8px;
+    }
+    .ejemplos-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .ejemplo-card {
+      padding: 14px;
+    }
+    .prompt-section, .prompt-box, .image-ref-wrap {
+      max-width: 100%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .steps-list {
+      gap: 8px;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+    }
+    .header-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 10px;
+    }
+    .header-right {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-start;
+    }
+    .nav-tabs-inner {
+      flex-direction: column;
+      gap: 0;
+      padding: 0 10px;
+    }
+    .nav-tab {
+      width: 100%;
+      text-align: left;
+      padding: 11px 10px;
+      font-size: 0.85rem;
+    }
+    .stats-bar {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat {
+      width: 100%;
+      justify-content: flex-start;
+    }
+    .controls {
+      gap: 6px;
+    }
+    .search-row {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .filter-row {
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .filter-group {
+      gap: 3px;
+    }
+    .section-title {
+      font-size: 0.8rem;
+      margin-bottom: 7px;
+    }
+    .btn-header, .btn-header-outline, .btn-header-solid {
+      width: 100%;
+      justify-content: center;
+      font-size: 0.9rem;
+      padding: 10px 0;
+    }
+    .toast {
+      right: 10px;
+      left: 10px;
+      max-width: unset;
+    }
+  }
+
+  /* Mejoras para pantallas muy pequeñas */
+  @media (max-width: 600px) {
+    .header-inner, .nav-tabs-inner, .container, .panel-full {
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+    .table-wrap {
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .ejemplo-card {
+      padding: 8px;
+    }
+    .prompt-box {
+      padding: 12px 8px;
+    }
+    .image-ref-body {
+      padding: 8px;
+    }
+    .section-title {
+      font-size: 0.7rem;
+    }
+    .btn-header, .btn-header-outline, .btn-header-solid {
+      font-size: 0.8rem;
+      padding: 8px 0;
+    }
+  }
