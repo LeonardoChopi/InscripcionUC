@@ -3,16 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cargar Array de Materias — Udelar</title>
+<title>Cargar Materias — Udelar</title>
+<meta name="author" content="Leonardo Chopitea">
+<meta property="og:url" content="https://github.com/LeonardoChopi">
+<link rel="source" href="https://github.com/LeonardoChopi/InscripcionUC">
+<meta name="description" content="Cargá tus materias de Udelar ingresándolas manualmente o pegando un array JavaScript generado con IA. Los datos se guardan localmente en tu navegador.">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="stylecargar.css">
 <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
-</head>
+<style>
+/* ── MODE SELECTOR ─────────────────────────────────── */
 
+</style>
+</head>
 <body>
 
 <script src="//code.tidio.co/paxxtp6fvyjpctl44mv0qzk5gl0pvbtt.js" async></script>
-  
+
 <header>
   <div class="header-inner">
     <a href="index.html">
@@ -26,8 +33,8 @@
       </div>
     </a>
     <div class="header-text">
-      <h1>Cargar Array de Unidades Curriculares</h1>
-      <p>Editor de datos &middot; Página no oficial</p>
+      <h1>Cargar Unidades Curriculares</h1>
+      <p>Editor de datos &middot; P&aacute;gina no oficial</p>
     </div>
     <div class="header-right">
       <a href="index.html" class="btn-back">
@@ -40,72 +47,209 @@
 
 <div class="page">
 
-  <!-- MAIN: EDITOR -->
+  <!-- ── MAIN ── -->
   <div>
-    <div class="section-title" style="margin-bottom:16px">Editor de array</div>
+    <div class="section-title" style="margin-bottom:16px">&iquest;C&oacute;mo quer&eacute;s cargar las materias?</div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Pegar array JavaScript</div>
-        <div class="card-subtitle">El array se valida en tiempo real mientras escribís o pegás el contenido.</div>
+    <!-- MODE SELECTOR -->
+    <div class="mode-selector">
+      <div class="mode-card" id="modeCardScript" onclick="switchMode('script')">
+        <div class="mode-card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <div>
+          <div class="mode-card-title">Pegar script / array JS</div>
+          <div class="mode-card-desc">Peg&aacute; el resultado de una IA o un array ya generado.</div>
+          <span class="mode-badge mode-badge-avanzado">Avanzado</span>
+        </div>
       </div>
-      <div class="card-body">
-        <div class="code-label">Contenido del array</div>
-        <textarea class="code-area" id="arrayInput"
-          placeholder="const materias = [&#10;  { id: 1, nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;, dia: &quot;Lunes&quot;, inicio: &quot;09:00&quot;, fin: &quot;11:00&quot; },&#10;  ...&#10;];"></textarea>
-
-        <div id="feedback" class="feedback"></div>
-
-        <div class="preview-section" id="previewSection">
-          <div class="code-label">Vista previa de materias detectadas</div>
-          <div class="chips" id="previewChips"></div>
+      <div class="mode-card active" id="modeCardForm" onclick="switchMode('form')">
+        <div class="mode-card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d5c3a" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
         </div>
-
-        <div class="actions">
-          <button class="btn-apply" id="btnApply" onclick="applyArray()" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            Guardar y aplicar
-          </button>
-          <button class="btn-clear" onclick="clearInput()">Limpiar</button>
+        <div>
+          <div class="mode-card-title">Ingresar manualmente</div>
+          <div class="mode-card-desc">Complet&aacute; un formulario campo por campo, clase por clase.</div>
+          <span class="mode-badge mode-badge-facil">M&aacute;s f&aacute;cil</span>
         </div>
+      </div>
+    </div>
 
-        <div class="success-banner" id="successBanner">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
-          <div class="success-banner-text">
-            <h4 id="successTitle">Array guardado correctamente</h4>
-            <p id="successDesc">Los datos fueron almacenados en este dispositivo.</p>
-            <a href="index.html" class="btn-go-home">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
-              Ir al sistema de inscripci&#243;n
-            </a>
+    <!-- ══ PANEL: SCRIPT ══ -->
+    <div class="mode-panel" id="panelScript">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Pegar array JavaScript</div>
+          <div class="card-subtitle">El array se valida en tiempo real mientras escrib&iacute;s o peg&aacute;s el contenido.</div>
+        </div>
+        <div class="card-body">
+          <div class="code-label">Contenido del array</div>
+          <textarea class="code-area" id="arrayInput"
+            placeholder="const materias = [&#10;  { id: 1, nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;, dia: &quot;Lunes&quot;, inicio: &quot;09:00&quot;, fin: &quot;11:00&quot; },&#10;  ...&#10;];"></textarea>
+
+          <div id="feedback" class="feedback"></div>
+
+          <div class="preview-section" id="previewSection">
+            <div class="code-label">Vista previa de materias detectadas</div>
+            <div class="chips" id="previewChips"></div>
+          </div>
+
+          <div class="actions">
+            <button class="btn-apply" id="btnApply" onclick="applyArray()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar y aplicar
+            </button>
+            <button class="btn-clear" onclick="clearInput()">Limpiar</button>
+          </div>
+
+          <div class="success-banner" id="successBanner">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+            <div class="success-banner-text">
+              <h4 id="successTitle">Array guardado correctamente</h4>
+              <p id="successDesc">Los datos fueron almacenados en este dispositivo.</p>
+              <a href="index.html" class="btn-go-home">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
+                Ir al sistema de inscripci&oacute;n
+              </a>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
 
+    <!-- ══ PANEL: FORMULARIO MANUAL ══ -->
+    <div class="mode-panel visible" id="panelForm">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Ingresar clases manualmente</div>
+          <div class="card-subtitle">Complet&aacute; los datos de cada clase y hac&eacute; clic en &ldquo;Agregar&rdquo;. Pod&eacute;s agregar tantas como necesit&eacute;s.</div>
+        </div>
+        <div class="card-body">
+
+          <div class="form-section-title">Datos de la clase a agregar</div>
+
+          <!-- Fila 1: nombre + grupo -->
+          <div class="form-row form-row-2" style="margin-bottom:10px">
+            <div class="form-field">
+              <label class="form-label">Nombre de la materia</label>
+              <input class="form-input" id="f-nombre" type="text" placeholder="ej: F&iacute;sica 1"
+                     autocomplete="off" list="sugerencias-nombre">
+              <datalist id="sugerencias-nombre"></datalist>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Grupo</label>
+              <input class="form-input" id="f-grupo" type="text" placeholder="ej: Grupo 1 / Grupo A">
+            </div>
+          </div>
+
+          <!-- Fila 2: tipo + salón -->
+          <div class="form-row form-row-2" style="margin-bottom:10px">
+            <div class="form-field">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" id="f-tipo">
+                <option value="">&mdash; Seleccion&aacute; &mdash;</option>
+                <option value="Teorico">Te&oacute;rico</option>
+                <option value="Practico">Pr&aacute;ctico</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Sal&oacute;n</label>
+              <input class="form-input" id="f-salon" type="text" placeholder="ej: 305 - 3er Piso / Virtual">
+            </div>
+          </div>
+
+          <!-- Fila 3: día + inicio + fin + botón -->
+          <div class="form-row form-row-4">
+            <div class="form-field">
+              <label class="form-label">D&iacute;a</label>
+              <select class="form-select" id="f-dia">
+                <option value="">&mdash; D&iacute;a &mdash;</option>
+                <option value="Lunes">Lunes</option>
+                <option value="Martes">Martes</option>
+                <option value="Miercoles">Mi&eacute;rcoles</option>
+                <option value="Jueves">Jueves</option>
+                <option value="Viernes">Viernes</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Hora inicio</label>
+              <input class="form-input" id="f-inicio" type="time">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Hora fin</label>
+              <input class="form-input" id="f-fin" type="time">
+            </div>
+            <div class="form-field" style="justify-content:flex-end">
+              <label class="form-label" style="visibility:hidden">.</label>
+              <button class="btn-add-class" id="btnAddClass" onclick="addClaseManual()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <div class="form-inline-error" id="formError"></div>
+
+          <!-- LISTA DE CLASES -->
+          <div class="form-section-title" style="margin-top:22px">Clases agregadas</div>
+          <div id="clasesList"></div>
+
+          <!-- ACCIONES GLOBALES -->
+          <div class="form-actions-bar" id="formActionsBar" style="display:none">
+            <span class="form-counter" id="formCounter">0 clases</span>
+            <button class="btn-clear" onclick="clearForm()">Descartar todo</button>
+            <button class="btn-apply" id="btnApplyForm" onclick="applyForm()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar y aplicar
+            </button>
+          </div>
+
+          <div class="success-banner" id="successBannerForm">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+            <div class="success-banner-text">
+              <h4 id="successTitleForm">Clases guardadas correctamente</h4>
+              <p id="successDescForm">Los datos fueron almacenados en este dispositivo.</p>
+              <a href="index.html" class="btn-go-home">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
+                Ir al sistema de inscripci&oacute;n
+              </a>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- SIDEBAR: REFERENCE -->
+  <!-- ── SIDEBAR ── -->
   <div>
     <div class="section-title" style="margin-bottom:16px">Referencia</div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="info-block">
-        <div class="info-block-title">Campos requeridos por objeto</div>
-        <div class="field-list">
-          <div class="field-item"><span class="field-name">id</span><span class="field-desc">N&#250;mero &#250;nico autoincremental</span></div>
-          <div class="field-item"><span class="field-name">nombre</span><span class="field-desc">Nombre de la asignatura</span></div>
-          <div class="field-item"><span class="field-name">tipo</span><span class="field-desc">"Teorico" o "Practico"</span></div>
-          <div class="field-item"><span class="field-name">grupo</span><span class="field-desc">"Grupo 1", "Grupo A", etc.</span></div>
-          <div class="field-item"><span class="field-name">salon</span><span class="field-desc">"305 - 3er Piso" o "Virtual"</span></div>
-          <div class="field-item"><span class="field-name">dia</span><span class="field-desc">Lunes | Martes | Miercoles | Jueves | Viernes</span></div>
-          <div class="field-item"><span class="field-name">inicio</span><span class="field-desc">Hora en formato "HH:MM"</span></div>
-          <div class="field-item"><span class="field-name">fin</span><span class="field-desc">Hora en formato "HH:MM"</span></div>
+    <!-- Sidebar: script mode -->
+    <div id="sidebarScript" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="info-block">
+          <div class="info-block-title">Campos requeridos por objeto</div>
+          <div class="field-list">
+            <div class="field-item"><span class="field-name">id</span><span class="field-desc">N&uacute;mero &uacute;nico autoincremental</span></div>
+            <div class="field-item"><span class="field-name">nombre</span><span class="field-desc">Nombre de la asignatura</span></div>
+            <div class="field-item"><span class="field-name">tipo</span><span class="field-desc">&ldquo;Teorico&rdquo; o &ldquo;Practico&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">grupo</span><span class="field-desc">&ldquo;Grupo 1&rdquo;, &ldquo;Grupo A&rdquo;, etc.</span></div>
+            <div class="field-item"><span class="field-name">salon</span><span class="field-desc">&ldquo;305 - 3er Piso&rdquo; o &ldquo;Virtual&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">dia</span><span class="field-desc">Lunes | Martes | Miercoles | Jueves | Viernes</span></div>
+            <div class="field-item"><span class="field-name">inicio</span><span class="field-desc">Hora en formato &ldquo;HH:MM&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">fin</span><span class="field-desc">Hora en formato &ldquo;HH:MM&rdquo;</span></div>
+          </div>
         </div>
-      </div>
-      <div class="info-block">
-        <div class="info-block-title">Ejemplo m&#237;nimo</div>
-        <div class="example-mini">const materias = [
+        <div class="info-block">
+          <div class="info-block-title">Ejemplo m&iacute;nimo</div>
+          <div class="example-mini">const materias = [
   {
     id: 1,
     nombre: "Fisica 1",
@@ -117,50 +261,97 @@
     fin: "11:30"
   },
 ];</div>
-      </div>
-      <div class="info-block">
-        <div class="info-block-title">Notas</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
-          Un grupo con clases en m&#250;ltiples d&#237;as necesita <strong>un objeto por cada d&#237;a</strong>.
-          El sistema los agrupa autom&#225;ticamente en una fila por grupo.
-          <br><br>
-          Pod&#233;s generar el array con IA usando el prompt en la p&#225;gina principal,
-          pesta&#241;a <strong>"C&#243;mo generar mi array"</strong>.
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Notas</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+            Un grupo con clases en m&uacute;ltiples d&iacute;as necesita <strong>un objeto por cada d&iacute;a</strong>.
+            El sistema los agrupa autom&aacute;ticamente en una fila por grupo.
+            <br><br>
+            Pod&eacute;s generar el array con IA usando el prompt en la p&aacute;gina principal,
+            pesta&ntilde;a <strong>&ldquo;C&oacute;mo generar mi array&rdquo;</strong>.
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Sidebar: form mode -->
+    <div id="sidebarForm">
+      <div class="card" style="margin-bottom:16px">
+        <div class="info-block">
+          <div class="info-block-title">&#9432; C&oacute;mo usar el formulario</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.75;">
+            <strong>1.</strong> Complet&aacute; los datos de una clase.<br>
+            <strong>2.</strong> Hac&eacute; clic en <strong>&ldquo;Agregar&rdquo;</strong>.<br>
+            <strong>3.</strong> Si un grupo tiene clases en <strong>varios d&iacute;as</strong>, agreg&aacute; una entrada por cada d&iacute;a con el mismo nombre y grupo.<br>
+            <strong>4.</strong> Cuando termines, clic en <strong>&ldquo;Guardar y aplicar&rdquo;</strong>.
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Grupos con varios d&iacute;as</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+            Si F&iacute;sica 1 Grupo 1 tiene clases el Mi&eacute;rcoles y el Viernes, agreg&aacute;s <strong>dos entradas</strong> con el mismo nombre y grupo, cambiando solo el d&iacute;a y horario. El sistema las une en una sola fila.
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Sal&oacute;n: formato sugerido</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.9;">
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">305 - 3er Piso</code><br>
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">Virtual 01</code><br>
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">Actos - 1er Piso</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Almacenamiento (siempre visible) -->
     <div class="card">
       <div class="info-block">
         <div class="info-block-title">&#9432; Sobre el almacenamiento</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
-          El array se guarda en <code style="font-family:'IBM Plex Mono',monospace;font-size:0.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">localStorage</code>
-          de este navegador. Los datos <strong>no se env&#237;an a ning&#250;n servidor</strong>.
+        <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+          Los datos se guardan en
+          <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">localStorage</code>
+          de este navegador. <strong>No se env&iacute;an a ning&uacute;n servidor</strong>.
           <br><br>
-          No ingreses datos sensibles como contrase&#241;as o informaci&#243;n personal.
+          No ingreses datos sensibles como contrase&ntilde;as o informaci&oacute;n personal.
         </div>
       </div>
     </div>
   </div>
 
-</div>
+</div><!-- /page -->
 
 <script>
 const LS_KEY_MATERIAS = 'udelar_v3_materias';
 const REQUIRED_FIELDS = ['id','nombre','tipo','grupo','salon','dia','inicio','fin'];
 let parsedArray = null;
 
-// ── Parse en tiempo real ──────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// MODE SWITCH
+// ──────────────────────────────────────────────────────────────
+function switchMode(mode) {
+  var isScript = (mode === 'script');
+  document.getElementById('modeCardScript').classList.toggle('active', isScript);
+  document.getElementById('modeCardForm').classList.toggle('active', !isScript);
+  document.getElementById('panelScript').classList.toggle('visible', isScript);
+  document.getElementById('panelForm').classList.toggle('visible', !isScript);
+  document.getElementById('sidebarScript').style.display = isScript ? '' : 'none';
+  document.getElementById('sidebarForm').style.display   = isScript ? 'none' : '';
+}
+
+// ──────────────────────────────────────────────────────────────
+// SCRIPT MODE — parse en tiempo real
+// ──────────────────────────────────────────────────────────────
 document.getElementById('arrayInput').addEventListener('input', function() {
   parseInput(this.value);
 });
 
 function parseInput(raw) {
-  const feedback     = document.getElementById('feedback');
-  const previewSec   = document.getElementById('previewSection');
-  const btnApply     = document.getElementById('btnApply');
-  const textarea     = document.getElementById('arrayInput');
-  const successBanner= document.getElementById('successBanner');
+  var feedback      = document.getElementById('feedback');
+  var previewSec    = document.getElementById('previewSection');
+  var btnApply      = document.getElementById('btnApply');
+  var textarea      = document.getElementById('arrayInput');
+  var successBanner = document.getElementById('successBanner');
 
   feedback.className = 'feedback';
   feedback.textContent = '';
@@ -170,11 +361,13 @@ function parseInput(raw) {
   textarea.classList.remove('error-state','ok-state');
   successBanner.classList.remove('visible');
 
-  const trimmed = raw.trim();
+  var trimmed = raw.trim();
   if (!trimmed) return;
 
-  // Extraer el array: acepta [ ... ] o const/let/var x = [ ... ];
-  var jsonLike = trimmed.replace(/^(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '').trim();
+  var jsonLike = trimmed
+    .replace(/^(?:const|let|var)\s+\w+\s*=\s*/, '')
+    .replace(/;\s*$/, '')
+    .trim();
 
   if (!jsonLike.startsWith('[')) {
     feedback.className = 'feedback err';
@@ -195,13 +388,17 @@ function parseInput(raw) {
 
   if (!Array.isArray(result) || result.length === 0) {
     feedback.className = 'feedback err';
-    feedback.textContent = !Array.isArray(result) ? 'Error: el resultado debe ser un Array.' : 'El array est\u00e1 vac\u00edo.';
+    feedback.textContent = !Array.isArray(result)
+      ? 'Error: el resultado debe ser un Array.'
+      : 'El array est\u00e1 vac\u00edo.';
     textarea.classList.add('error-state');
     return;
   }
 
   var invalid = result.filter(function(m) {
-    return REQUIRED_FIELDS.some(function(f) { return m[f] === undefined || m[f] === null || String(m[f]).trim() === ''; });
+    return REQUIRED_FIELDS.some(function(f) {
+      return m[f] === undefined || m[f] === null || String(m[f]).trim() === '';
+    });
   });
   if (invalid.length > 0) {
     feedback.className = 'feedback err';
@@ -210,56 +407,230 @@ function parseInput(raw) {
     return;
   }
 
-  // Todo OK
   parsedArray = result;
   textarea.classList.add('ok-state');
 
-  var nombres = [...new Set(result.map(function(m) { return m.nombre; }))];
-  var tipos   = [...new Set(result.map(function(m) { return m.tipo; }))];
-  var grupos  = new Set(result.map(function(m) { return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+  var nombres = [...new Set(result.map(function(m){ return m.nombre; }))];
+  var tipos   = [...new Set(result.map(function(m){ return m.tipo; }))];
+  var grupos  = new Set(result.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
 
   feedback.className = 'feedback ok';
   feedback.textContent = '\u2713 Array v\u00e1lido \u00b7 ' + result.length + ' registros \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u00fanicos';
 
   var chips = document.getElementById('previewChips');
   chips.innerHTML =
-    nombres.map(function(n) { return '<span class="chip">'+n+'</span>'; }).join('') +
-    tipos.map(function(t) { return '<span class="chip '+(t==='Teorico'?'teorico':'practico')+'">'+t+'</span>'; }).join('');
+    nombres.map(function(n){ return '<span class="chip">'+n+'</span>'; }).join('') +
+    tipos.map(function(t){ return '<span class="chip '+(t==='Teorico'?'teorico':'practico')+'">'+t+'</span>'; }).join('');
   previewSec.classList.add('visible');
   btnApply.disabled = false;
 }
 
-// ── Aplicar ───────────────────────────────────────────────────────────────
 function applyArray() {
   if (!parsedArray) return;
   try {
     localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(parsedArray));
-    // Limpiar inscripciones previas ya que los IDs pueden haber cambiado
     localStorage.removeItem('udelar_v3');
   } catch(e) {
     alert('No se pudo guardar en localStorage: ' + e.message);
     return;
   }
-
-  var nombres = [...new Set(parsedArray.map(function(m) { return m.nombre; }))];
-  var grupos  = new Set(parsedArray.map(function(m) { return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
-
+  var nombres = [...new Set(parsedArray.map(function(m){ return m.nombre; }))];
+  var grupos  = new Set(parsedArray.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
   document.getElementById('successTitle').textContent = '\u2713 Array guardado correctamente';
   document.getElementById('successDesc').textContent  =
     parsedArray.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
-
   document.getElementById('successBanner').classList.add('visible');
   document.getElementById('btnApply').disabled = true;
-
-  // Marcar en sessionStorage para que index.html muestre el toast
   sessionStorage.setItem('array_recien_cargado', '1');
 }
 
-// ── Limpiar ───────────────────────────────────────────────────────────────
 function clearInput() {
   document.getElementById('arrayInput').value = '';
   parseInput('');
 }
+
+// ──────────────────────────────────────────────────────────────
+// FORM MODE
+// ──────────────────────────────────────────────────────────────
+var formClases = [];
+
+function addClaseManual() {
+  var nombre = document.getElementById('f-nombre').value.trim();
+  var grupo  = document.getElementById('f-grupo').value.trim();
+  var tipo   = document.getElementById('f-tipo').value;
+  var salon  = document.getElementById('f-salon').value.trim();
+  var dia    = document.getElementById('f-dia').value;
+  var inicio = document.getElementById('f-inicio').value;
+  var fin    = document.getElementById('f-fin').value;
+  var errEl  = document.getElementById('formError');
+
+  // Resetear estado
+  ['f-nombre','f-grupo','f-tipo','f-salon','f-dia','f-inicio','f-fin'].forEach(function(id) {
+    document.getElementById(id).classList.remove('err','ok');
+  });
+  errEl.classList.remove('visible');
+  errEl.textContent = '';
+
+  // Validaciones
+  var errors = [];
+  if (!nombre) { document.getElementById('f-nombre').classList.add('err'); errors.push('nombre de materia'); }
+  if (!grupo)  { document.getElementById('f-grupo').classList.add('err');  errors.push('grupo'); }
+  if (!tipo)   { document.getElementById('f-tipo').classList.add('err');   errors.push('tipo'); }
+  if (!salon)  { document.getElementById('f-salon').classList.add('err');  errors.push('sal\u00f3n'); }
+  if (!dia)    { document.getElementById('f-dia').classList.add('err');    errors.push('d\u00eda'); }
+  if (!inicio) { document.getElementById('f-inicio').classList.add('err'); errors.push('hora inicio'); }
+  if (!fin)    { document.getElementById('f-fin').classList.add('err');    errors.push('hora fin'); }
+  if (inicio && fin && inicio >= fin) {
+    document.getElementById('f-inicio').classList.add('err');
+    document.getElementById('f-fin').classList.add('err');
+    errors.push('la hora de fin debe ser posterior al inicio');
+  }
+
+  if (errors.length > 0) {
+    errEl.textContent = 'Falta completar o corregir: ' + errors.join(', ') + '.';
+    errEl.classList.add('visible');
+    return;
+  }
+
+  // OK — agregar
+  formClases.push({
+    id: formClases.length + 1,
+    nombre: nombre, tipo: tipo, grupo: grupo,
+    salon: salon, dia: dia, inicio: inicio, fin: fin
+  });
+
+  renderFormList();
+
+  // Limpiar sólo día y hora (mantener nombre/grupo/tipo/salón para facilitar carga de varios días)
+  document.getElementById('f-dia').value    = '';
+  document.getElementById('f-inicio').value = '';
+  document.getElementById('f-fin').value    = '';
+
+  // Marcar los campos fijos como ok brevemente y moverle el foco al día
+  ['f-nombre','f-grupo','f-tipo','f-salon'].forEach(function(id) {
+    document.getElementById(id).classList.add('ok');
+    setTimeout(function(){ document.getElementById(id).classList.remove('ok'); }, 600);
+  });
+  setTimeout(function(){ document.getElementById('f-dia').focus(); }, 80);
+}
+
+// ── Poblar el datalist de nombres desde localStorage + clases ya ingresadas ──
+function refreshNombresSelect() {
+  var dl = document.getElementById('sugerencias-nombre');
+
+  // Fuente 1: materias guardadas en localStorage
+  var lsNombres = [];
+  try {
+    var raw = localStorage.getItem(LS_KEY_MATERIAS);
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) lsNombres = arr.map(function(m){ return m.nombre; });
+    }
+  } catch(e) {}
+
+  // Fuente 2: clases ya ingresadas en este formulario
+  var formNombres = formClases.map(function(c){ return c.nombre; });
+
+  // Unión sin duplicados, ordenada
+  var todos = [...new Set(lsNombres.concat(formNombres))].sort(function(a,b){
+    return a.localeCompare(b, 'es');
+  });
+
+  dl.innerHTML = '';
+  todos.forEach(function(n) {
+    var opt = document.createElement('option');
+    opt.value = n;
+    dl.appendChild(opt);
+  });
+}
+
+function removeClase(idx) {
+  formClases.splice(idx, 1);
+  // Re-numerar IDs
+  formClases = formClases.map(function(c, i){ return Object.assign({}, c, { id: i + 1 }); });
+  renderFormList();
+}
+
+function renderFormList() {
+  var container   = document.getElementById('clasesList');
+  var actionsBar  = document.getElementById('formActionsBar');
+  var counter     = document.getElementById('formCounter');
+  var successBF   = document.getElementById('successBannerForm');
+
+  successBF.classList.remove('visible');
+
+  // Mantener el select de nombres actualizado
+  refreshNombresSelect();
+
+  if (formClases.length === 0) {
+    container.innerHTML = '<div class="clases-empty">Todav\u00eda no agreg\u00e1s ninguna clase.<br>Complet\u00e1 el formulario de arriba y hac\u00e9 clic en \u201cAgregar\u201d.</div>';
+    actionsBar.style.display = 'none';
+    return;
+  }
+
+  var DIA_DISPLAY  = { Lunes:'Lunes', Martes:'Martes', Miercoles:'Mi\u00e9rcoles', Jueves:'Jueves', Viernes:'Viernes' };
+  var TIPO_DISPLAY = { Teorico:'Te\u00f3rico', Practico:'Pr\u00e1ctico' };
+
+  container.innerHTML = '<div class="clases-list">' + formClases.map(function(c, i) {
+    return '<div class="clase-item">' +
+      '<div class="clase-item-text">' +
+        '<div class="clase-item-nombre">' + esc(c.nombre) + ' &mdash; ' + esc(c.grupo) + '</div>' +
+        '<div class="clase-item-meta">' +
+          (TIPO_DISPLAY[c.tipo] || esc(c.tipo)) + ' &nbsp;&middot;&nbsp; ' +
+          (DIA_DISPLAY[c.dia]  || esc(c.dia))  + ' &nbsp;&middot;&nbsp; ' +
+          esc(c.inicio) + '&ndash;' + esc(c.fin) + ' &nbsp;&middot;&nbsp; ' + esc(c.salon) +
+        '</div>' +
+      '</div>' +
+      '<button class="clase-item-remove" onclick="removeClase(' + i + ')" title="Eliminar">&#10005;</button>' +
+    '</div>';
+  }).join('') + '</div>';
+
+  var n = formClases.length;
+  counter.textContent = n + ' clase' + (n !== 1 ? 's' : '') + ' agregada' + (n !== 1 ? 's' : '');
+  actionsBar.style.display = 'flex';
+}
+
+function applyForm() {
+  if (formClases.length === 0) return;
+  try {
+    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(formClases));
+    localStorage.removeItem('udelar_v3');
+  } catch(e) {
+    alert('No se pudo guardar en localStorage: ' + e.message);
+    return;
+  }
+  var nombres = [...new Set(formClases.map(function(m){ return m.nombre; }))];
+  var grupos  = new Set(formClases.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+  document.getElementById('successTitleForm').textContent = '\u2713 Clases guardadas correctamente';
+  document.getElementById('successDescForm').textContent  =
+    formClases.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
+  document.getElementById('successBannerForm').classList.add('visible');
+  document.getElementById('formActionsBar').style.display = 'none';
+  sessionStorage.setItem('array_recien_cargado', '1');
+}
+
+function clearForm() {
+  if (formClases.length > 0 && !confirm('¿Seguro que querés descartar todas las clases ingresadas?')) return;
+  formClases = [];
+  renderFormList();
+  ['f-nombre','f-grupo','f-tipo','f-salon','f-dia','f-inicio','f-fin'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('err','ok');
+  });
+  document.getElementById('formError').classList.remove('visible');
+  // Repoblar el select (puede haber cambiado si se descartaron clases)
+  refreshNombresSelect();
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+refreshNombresSelect();
+renderFormList();
 </script>
 <script src="aviso-privacidad.js"></script>
 </body>

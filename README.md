@@ -1,185 +1,726 @@
-# Sistema de Inscripción a Unidades Curriculares — Udelar
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargar Materias — Udelar</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stylecargar.css">
+<link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
+<style>
+/* ── MODE SELECTOR ─────────────────────────────────── */
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.mode-card {
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  user-select: none;
+}
+.mode-card:hover { border-color: var(--accent2); box-shadow: 0 2px 12px rgba(26,58,92,.1); }
+.mode-card.active { border-color: var(--accent); background: #f0f5fa; box-shadow: 0 2px 12px rgba(26,58,92,.12); }
+.mode-card-icon {
+  width: 36px; height: 36px; border-radius: 5px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.mode-card.active .mode-card-icon { background: #dce9f5; border-color: #a8c8e8; }
+.mode-card-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.mode-card-desc  { font-size: .76rem; color: var(--text-muted); line-height: 1.5; }
+.mode-badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 2px;
+  display: inline-block; margin-top: 5px;
+}
+.mode-badge-avanzado { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.mode-badge-facil    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
 
-Aplicación web estática para explorar horarios de materias y armar tu inscripción sin conflictos. Funciona completamente en el navegador, sin servidor ni base de datos.
+/* ── PANEL VISIBILITY ──────────────────────────────── */
+.mode-panel { display: none; }
+.mode-panel.visible { display: block; }
 
-Repositorio GitHub del proyecto: https://github.com/LeonardoChopi/InscripcionUC 
+/* ── FORM STYLES ───────────────────────────────────── */
+.form-section-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 12px; margin-top: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.form-section-title:first-child { margin-top: 0; }
+.form-row { display: grid; gap: 10px; margin-bottom: 10px; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .67rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+}
+.form-input, .form-select {
+  padding: 8px 10px; font-family: 'IBM Plex Sans', sans-serif; font-size: .84rem;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--surface); color: var(--text); outline: none;
+  transition: border-color .15s; width: 100%;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent2); }
+.form-input.err, .form-select.err { border-color: var(--red) !important; }
+.form-input.ok,  .form-select.ok  { border-color: #3a8a5c !important; }
 
----
+.btn-add-class {
+  font-family: 'IBM Plex Mono', monospace; font-size: .74rem; letter-spacing: .04em;
+  padding: 9px 16px; background: var(--accent); color: white; border: none;
+  border-radius: 3px; cursor: pointer; transition: background .15s;
+  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+}
+.btn-add-class:hover { background: var(--accent2); }
 
-## Archivos del proyecto
+.form-inline-error {
+  font-size: .74rem; color: var(--red); font-family: 'IBM Plex Mono', monospace;
+  margin-top: 6px; display: none;
+  background: #faeaea; border: 1px solid #e0b0b0; border-radius: 3px;
+  padding: 8px 12px; line-height: 1.5;
+}
+.form-inline-error.visible { display: block; }
 
-```
-├── index.html          → Página principal (inscripción, ejemplos, guía)
-├── cargar.html         → Editor para importar un array personalizado
-├── materias.js         → Arrays de ejemplo pre-cargados
-└── aviso-privacidad.js → Módulo de aviso de uso de localStorage
-```
+/* ── CLASES LIST ───────────────────────────────────── */
+.clases-list { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+.clase-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 4px; font-size: .81rem;
+  animation: fadeIn .2s ease;
+}
+.clase-item-text { flex: 1; line-height: 1.45; }
+.clase-item-nombre { font-weight: 600; color: var(--text); }
+.clase-item-meta { color: var(--text-muted); font-size: .75rem; margin-top: 2px; }
+.clase-item-remove {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 3px 6px; border-radius: 2px; font-size: .85rem;
+  transition: color .12s, background .12s; flex-shrink: 0;
+}
+.clase-item-remove:hover { color: var(--red); background: #faeaea; }
 
-Todos los archivos deben estar en la **misma carpeta**. No se requiere ningún servidor — abrí `index.html` directamente en el navegador.
+.clases-empty {
+  text-align: center; padding: 24px 16px;
+  border: 1px dashed var(--border); border-radius: 4px;
+  color: var(--text-muted); font-size: .8rem; line-height: 1.65; margin-top: 4px;
+}
 
----
+/* ── FORM ACTIONS BAR ──────────────────────────────── */
+.form-actions-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--surface2);
+}
+.form-counter { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--text-muted); flex: 1; }
 
-## Páginas
+/* ── RESPONSIVE ────────────────────────────────────── */
+@media (max-width: 760px) {
+  .mode-selector { grid-template-columns: 1fr; }
+  .form-row-4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .form-row-2, .form-row-3, .form-row-4 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
 
-### `index.html` — Sistema de inscripción
+<script src="//code.tidio.co/paxxtp6fvyjpctl44mv0qzk5gl0pvbtt.js" async></script>
 
-La página principal tiene tres pestañas:
+<header>
+  <div class="header-inner">
+    <a href="index.html">
+      <div class="logo-mark">
+        <svg viewBox="0 0 26 26" fill="none">
+          <rect x="1" y="1" width="10" height="10" fill="#1a3a5c"/>
+          <rect x="15" y="1" width="10" height="10" fill="#1a3a5c"/>
+          <rect x="1" y="15" width="10" height="10" fill="#1a3a5c"/>
+          <rect x="15" y="15" width="10" height="10" fill="#2e6da4"/>
+        </svg>
+      </div>
+    </a>
+    <div class="header-text">
+      <h1>Cargar Unidades Curriculares</h1>
+      <p>Editor de datos &middot; P&aacute;gina no oficial</p>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="btn-back">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al sistema
+      </a>
+    </div>
+  </div>
+</header>
 
-**Inscripción**
-- Tabla de grupos con detección automática de conflictos de horario
-- Bloqueo de inscripción duplicada por materia y tipo
-- Filtros por día, franja horaria (mañana / tarde / noche), tipo (Teórico / Práctico) y vista (todos / disponibles / inscriptas)
-- Búsqueda en tiempo real por nombre de materia
-- Sidebar con lista de materias inscriptas y vista de horario semanal
-- Persistencia automática en `localStorage`
+<div class="page">
 
-**Ejemplos de materias**
-- Cards con los conjuntos de horarios disponibles en `materias.js`
-- Botón por materia para **ocultar o mostrar** sus grupos en la tabla principal
-- Botones globales "Mostrar todo" / "Ocultar todo"
-- Barra de estado que indica cuántas materias están visibles
-- Si existe un array cargado manualmente con materias que no están en los ejemplos, aparece una card adicional con sus propios controles de visibilidad
-- El estado de visibilidad persiste entre sesiones
+  <!-- ── MAIN ── -->
+  <div>
+    <div class="section-title" style="margin-bottom:16px">&iquest;C&oacute;mo quer&eacute;s cargar las materias?</div>
 
-**Cómo generar mi array**
-- Instrucciones paso a paso para usar IA (Claude / ChatGPT) y convertir una imagen de cronograma en un array JS
-- Prompt listo para copiar
-- Espacio para colocar una imagen de referencia
-- Ejemplo de formato de salida esperado
+    <!-- MODE SELECTOR -->
+    <div class="mode-selector">
+      <div class="mode-card active" id="modeCardScript" onclick="switchMode('script')">
+        <div class="mode-card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <div>
+          <div class="mode-card-title">Pegar script / array JS</div>
+          <div class="mode-card-desc">Peg&aacute; el resultado de una IA o un array ya generado.</div>
+          <span class="mode-badge mode-badge-avanzado">Avanzado</span>
+        </div>
+      </div>
+      <div class="mode-card" id="modeCardForm" onclick="switchMode('form')">
+        <div class="mode-card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d5c3a" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <div>
+          <div class="mode-card-title">Ingresar manualmente</div>
+          <div class="mode-card-desc">Complet&aacute; un formulario campo por campo, clase por clase.</div>
+          <span class="mode-badge mode-badge-facil">M&aacute;s f&aacute;cil</span>
+        </div>
+      </div>
+    </div>
 
----
+    <!-- ══ PANEL: SCRIPT ══ -->
+    <div class="mode-panel visible" id="panelScript">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Pegar array JavaScript</div>
+          <div class="card-subtitle">El array se valida en tiempo real mientras escrib&iacute;s o peg&aacute;s el contenido.</div>
+        </div>
+        <div class="card-body">
+          <div class="code-label">Contenido del array</div>
+          <textarea class="code-area" id="arrayInput"
+            placeholder="const materias = [&#10;  { id: 1, nombre: &quot;Fisica 1&quot;, tipo: &quot;Practico&quot;, grupo: &quot;Grupo 1&quot;, salon: &quot;305 - 3er Piso&quot;, dia: &quot;Lunes&quot;, inicio: &quot;09:00&quot;, fin: &quot;11:00&quot; },&#10;  ...&#10;];"></textarea>
 
-### `cargar.html` — Importar array
+          <div id="feedback" class="feedback"></div>
 
-Editor independiente para cargar un array de materias personalizado:
+          <div class="preview-section" id="previewSection">
+            <div class="code-label">Vista previa de materias detectadas</div>
+            <div class="chips" id="previewChips"></div>
+          </div>
 
-- Textarea con sintaxis oscura para pegar el array
-- Validación en tiempo real con feedback visual (verde / rojo)
-- Preview de materias y tipos detectados
-- Al guardar, escribe en `localStorage` y limpia inscripciones previas
-- Banner de confirmación con botón para volver al sistema
+          <div class="actions">
+            <button class="btn-apply" id="btnApply" onclick="applyArray()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar y aplicar
+            </button>
+            <button class="btn-clear" onclick="clearInput()">Limpiar</button>
+          </div>
 
----
+          <div class="success-banner" id="successBanner">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+            <div class="success-banner-text">
+              <h4 id="successTitle">Array guardado correctamente</h4>
+              <p id="successDesc">Los datos fueron almacenados en este dispositivo.</p>
+              <a href="index.html" class="btn-go-home">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
+                Ir al sistema de inscripci&oacute;n
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-## Formato del array de materias
+    <!-- ══ PANEL: FORMULARIO MANUAL ══ -->
+    <div class="mode-panel" id="panelForm">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Ingresar clases manualmente</div>
+          <div class="card-subtitle">Complet&aacute; los datos de cada clase y hac&eacute; clic en &ldquo;Agregar&rdquo;. Pod&eacute;s agregar tantas como necesit&eacute;s.</div>
+        </div>
+        <div class="card-body">
 
-Cada objeto representa **una clase en un día específico**. Si un grupo tiene clases en varios días, se necesita un objeto por cada día.
+          <div class="form-section-title">Datos de la clase a agregar</div>
 
-```js
-const materias = [
+          <!-- Fila 1: nombre + grupo -->
+          <div class="form-row form-row-2" style="margin-bottom:10px">
+            <div class="form-field">
+              <label class="form-label">Nombre de la materia</label>
+              <input class="form-input" id="f-nombre" type="text" placeholder="ej: F&iacute;sica 1" autocomplete="off"
+                     list="sugerencias-nombre">
+              <datalist id="sugerencias-nombre"></datalist>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Grupo</label>
+              <input class="form-input" id="f-grupo" type="text" placeholder="ej: Grupo 1 / Grupo A">
+            </div>
+          </div>
+
+          <!-- Fila 2: tipo + salón -->
+          <div class="form-row form-row-2" style="margin-bottom:10px">
+            <div class="form-field">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" id="f-tipo">
+                <option value="">&mdash; Seleccion&aacute; &mdash;</option>
+                <option value="Teorico">Te&oacute;rico</option>
+                <option value="Practico">Pr&aacute;ctico</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Sal&oacute;n</label>
+              <input class="form-input" id="f-salon" type="text" placeholder="ej: 305 - 3er Piso / Virtual">
+            </div>
+          </div>
+
+          <!-- Fila 3: día + inicio + fin + botón -->
+          <div class="form-row form-row-4">
+            <div class="form-field">
+              <label class="form-label">D&iacute;a</label>
+              <select class="form-select" id="f-dia">
+                <option value="">&mdash; D&iacute;a &mdash;</option>
+                <option value="Lunes">Lunes</option>
+                <option value="Martes">Martes</option>
+                <option value="Miercoles">Mi&eacute;rcoles</option>
+                <option value="Jueves">Jueves</option>
+                <option value="Viernes">Viernes</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Hora inicio</label>
+              <input class="form-input" id="f-inicio" type="time">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Hora fin</label>
+              <input class="form-input" id="f-fin" type="time">
+            </div>
+            <div class="form-field" style="justify-content:flex-end">
+              <label class="form-label" style="visibility:hidden">.</label>
+              <button class="btn-add-class" id="btnAddClass" onclick="addClaseManual()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <div class="form-inline-error" id="formError"></div>
+
+          <!-- LISTA DE CLASES -->
+          <div class="form-section-title" style="margin-top:22px">Clases agregadas</div>
+          <div id="clasesList"></div>
+
+          <!-- ACCIONES GLOBALES -->
+          <div class="form-actions-bar" id="formActionsBar" style="display:none">
+            <span class="form-counter" id="formCounter">0 clases</span>
+            <button class="btn-clear" onclick="clearForm()">Descartar todo</button>
+            <button class="btn-apply" id="btnApplyForm" onclick="applyForm()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar y aplicar
+            </button>
+          </div>
+
+          <div class="success-banner" id="successBannerForm">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+            <div class="success-banner-text">
+              <h4 id="successTitleForm">Clases guardadas correctamente</h4>
+              <p id="successDescForm">Los datos fueron almacenados en este dispositivo.</p>
+              <a href="index.html" class="btn-go-home">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="15 18 9 12 15 6"/></svg>
+                Ir al sistema de inscripci&oacute;n
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div>
+    <div class="section-title" style="margin-bottom:16px">Referencia</div>
+
+    <!-- Sidebar: script mode -->
+    <div id="sidebarScript">
+      <div class="card" style="margin-bottom:16px">
+        <div class="info-block">
+          <div class="info-block-title">Campos requeridos por objeto</div>
+          <div class="field-list">
+            <div class="field-item"><span class="field-name">id</span><span class="field-desc">N&uacute;mero &uacute;nico autoincremental</span></div>
+            <div class="field-item"><span class="field-name">nombre</span><span class="field-desc">Nombre de la asignatura</span></div>
+            <div class="field-item"><span class="field-name">tipo</span><span class="field-desc">&ldquo;Teorico&rdquo; o &ldquo;Practico&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">grupo</span><span class="field-desc">&ldquo;Grupo 1&rdquo;, &ldquo;Grupo A&rdquo;, etc.</span></div>
+            <div class="field-item"><span class="field-name">salon</span><span class="field-desc">&ldquo;305 - 3er Piso&rdquo; o &ldquo;Virtual&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">dia</span><span class="field-desc">Lunes | Martes | Miercoles | Jueves | Viernes</span></div>
+            <div class="field-item"><span class="field-name">inicio</span><span class="field-desc">Hora en formato &ldquo;HH:MM&rdquo;</span></div>
+            <div class="field-item"><span class="field-name">fin</span><span class="field-desc">Hora en formato &ldquo;HH:MM&rdquo;</span></div>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Ejemplo m&iacute;nimo</div>
+          <div class="example-mini">const materias = [
   {
-    id: 1,               // Número único autoincremental
-    nombre: "Fisica 1",  // Nombre de la asignatura
-    tipo: "Practico",    // "Teorico" o "Practico"
-    grupo: "Grupo 1",    // Identificador del grupo
-    salon: "305 - 3er Piso", // Salón o "Virtual"
-    dia: "Miercoles",    // Lunes | Martes | Miercoles | Jueves | Viernes
-    inicio: "10:00",     // Hora de inicio HH:MM
-    fin: "11:30"         // Hora de fin HH:MM
-  },
-  {
-    id: 2,
+    id: 1,
     nombre: "Fisica 1",
     tipo: "Practico",
-    grupo: "Grupo 1",    // Mismo grupo, segundo día de la semana
+    grupo: "Grupo 1",
     salon: "305 - 3er Piso",
-    dia: "Viernes",
+    dia: "Miercoles",
     inicio: "10:00",
     fin: "11:30"
   },
-];
-```
+];</div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Notas</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+            Un grupo con clases en m&uacute;ltiples d&iacute;as necesita <strong>un objeto por cada d&iacute;a</strong>.
+            El sistema los agrupa autom&aacute;ticamente en una fila por grupo.
+            <br><br>
+            Pod&eacute;s generar el array con IA usando el prompt en la p&aacute;gina principal,
+            pesta&ntilde;a <strong>&ldquo;C&oacute;mo generar mi array&rdquo;</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
 
-El sistema agrupa automáticamente los registros del mismo `nombre + tipo + grupo` en una sola fila de la tabla.
+    <!-- Sidebar: form mode -->
+    <div id="sidebarForm" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="info-block">
+          <div class="info-block-title">&#9432; C&oacute;mo usar el formulario</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.75;">
+            <strong>1.</strong> Complet&aacute; los datos de una clase.<br>
+            <strong>2.</strong> Hac&eacute; clic en <strong>&ldquo;Agregar&rdquo;</strong>.<br>
+            <strong>3.</strong> Si un grupo tiene clases en <strong>varios d&iacute;as</strong>, agreg&aacute; una entrada por cada d&iacute;a con el mismo nombre y grupo.<br>
+            <strong>4.</strong> Cuando termines, clic en <strong>&ldquo;Guardar y aplicar&rdquo;</strong>.
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Grupos con varios d&iacute;as</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+            Si F&iacute;sica 1 Grupo 1 tiene clases el Mi&eacute;rcoles y el Viernes, agreg&aacute;s <strong>dos entradas</strong> con el mismo nombre y grupo, cambiando solo el d&iacute;a y horario. El sistema las une en una sola fila.
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Sal&oacute;n: formato sugerido</div>
+          <div style="font-size:.8rem;color:var(--text-muted);line-height:1.9;">
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">305 - 3er Piso</code><br>
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">Virtual 01</code><br>
+            <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">Actos - 1er Piso</code>
+          </div>
+        </div>
+      </div>
+    </div>
 
----
+    <!-- Almacenamiento (siempre visible) -->
+    <div class="card">
+      <div class="info-block">
+        <div class="info-block-title">&#9432; Sobre el almacenamiento</div>
+        <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
+          Los datos se guardan en
+          <code style="font-family:'IBM Plex Mono',monospace;font-size:.73rem;background:var(--surface2);padding:1px 5px;border-radius:2px">localStorage</code>
+          de este navegador. <strong>No se env&iacute;an a ning&uacute;n servidor</strong>.
+          <br><br>
+          No ingreses datos sensibles como contrase&ntilde;as o informaci&oacute;n personal.
+        </div>
+      </div>
+    </div>
+  </div>
 
-## Agregar ejemplos pre-cargados
+</div><!-- /page -->
 
-Editá `materias.js` y agregá una entrada al array `EJEMPLOS_MATERIAS`:
+<script>
+const LS_KEY_MATERIAS = 'udelar_v3_materias';
+const REQUIRED_FIELDS = ['id','nombre','tipo','grupo','salon','dia','inicio','fin'];
+let parsedArray = null;
 
-```js
-{
-  id: 'mi-materia',               // Identificador único (sin espacios)
-  nombre: 'Cálculo 1',            // Nombre que aparece en la card
-  descripcion: 'Descripción breve del contenido.',
-  color: '#1a3a5c',               // Color del punto decorativo (hex)
-  datos: [
-    { id: 1, nombre: "Calculo 1", tipo: "Teorico", grupo: "Grupo 1",
-      salon: "301 - 3er Piso", dia: "Lunes", inicio: "08:00", fin: "09:30" },
-    // ...
-  ]
+// ──────────────────────────────────────────────────────────────
+// MODE SWITCH
+// ──────────────────────────────────────────────────────────────
+function switchMode(mode) {
+  var isScript = (mode === 'script');
+  document.getElementById('modeCardScript').classList.toggle('active', isScript);
+  document.getElementById('modeCardForm').classList.toggle('active', !isScript);
+  document.getElementById('panelScript').classList.toggle('visible', isScript);
+  document.getElementById('panelForm').classList.toggle('visible', !isScript);
+  document.getElementById('sidebarScript').style.display = isScript ? '' : 'none';
+  document.getElementById('sidebarForm').style.display   = isScript ? 'none' : '';
 }
-```
 
----
+// ──────────────────────────────────────────────────────────────
+// SCRIPT MODE — parse en tiempo real
+// ──────────────────────────────────────────────────────────────
+document.getElementById('arrayInput').addEventListener('input', function() {
+  parseInput(this.value);
+});
 
-## Generar un array con IA
+function parseInput(raw) {
+  var feedback      = document.getElementById('feedback');
+  var previewSec    = document.getElementById('previewSection');
+  var btnApply      = document.getElementById('btnApply');
+  var textarea      = document.getElementById('arrayInput');
+  var successBanner = document.getElementById('successBanner');
 
-Si tenés una imagen de tu cronograma, podés usar Claude o ChatGPT con el siguiente prompt:
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  previewSec.classList.remove('visible');
+  btnApply.disabled = true;
+  parsedArray = null;
+  textarea.classList.remove('error-state','ok-state');
+  successBanner.classList.remove('visible');
 
-```
-Extrae datos de un cronograma de clases y conviértelos en un array JS llamado materias.
+  var trimmed = raw.trim();
+  if (!trimmed) return;
 
-Estructura de cada objeto:
-{ id, nombre, tipo, grupo, salon, dia, inicio, fin }
+  var jsonLike = trimmed
+    .replace(/^(?:const|let|var)\s+\w+\s*=\s*/, '')
+    .replace(/;\s*$/, '')
+    .trim();
 
-Reglas:
-- Un objeto por cada día con horario.
-- id autoincremental.
-- nombre: asignatura de la tabla.
-- tipo: "Teorico" o "Practico".
-- grupo: nombre del grupo.
-- salon: "AULA - PISO" o "VIRTUAL".
-- dia: Lunes | Martes | Miercoles | Jueves | Viernes.
-- inicio y fin en formato HH:MM.
+  if (!jsonLike.startsWith('[')) {
+    feedback.className = 'feedback err';
+    feedback.textContent = 'Error: el contenido debe ser un array que empiece con [';
+    textarea.classList.add('error-state');
+    return;
+  }
 
-Devuelve SOLO:
-const materias = [ ... ];
+  var result;
+  try {
+    result = Function('"use strict"; return (' + jsonLike + ')')();
+  } catch(e) {
+    feedback.className = 'feedback err';
+    feedback.textContent = 'Error de sintaxis: ' + e.message;
+    textarea.classList.add('error-state');
+    return;
+  }
 
-Imagen a procesar: [ADJUNTAR IMAGEN DE LOS HORARIOS]
-```
+  if (!Array.isArray(result) || result.length === 0) {
+    feedback.className = 'feedback err';
+    feedback.textContent = !Array.isArray(result)
+      ? 'Error: el resultado debe ser un Array.'
+      : 'El array est\u00e1 vac\u00edo.';
+    textarea.classList.add('error-state');
+    return;
+  }
 
-Luego pegá el resultado en `cargar.html`.
+  var invalid = result.filter(function(m) {
+    return REQUIRED_FIELDS.some(function(f) {
+      return m[f] === undefined || m[f] === null || String(m[f]).trim() === '';
+    });
+  });
+  if (invalid.length > 0) {
+    feedback.className = 'feedback err';
+    feedback.textContent = invalid.length + ' objeto(s) con campos faltantes. Requeridos: ' + REQUIRED_FIELDS.join(', ');
+    textarea.classList.add('error-state');
+    return;
+  }
 
----
+  parsedArray = result;
+  textarea.classList.add('ok-state');
 
-## Almacenamiento local
+  var nombres = [...new Set(result.map(function(m){ return m.nombre; }))];
+  var tipos   = [...new Set(result.map(function(m){ return m.tipo; }))];
+  var grupos  = new Set(result.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
 
-Todos los datos se guardan en `localStorage` del navegador bajo estas claves:
+  feedback.className = 'feedback ok';
+  feedback.textContent = '\u2713 Array v\u00e1lido \u00b7 ' + result.length + ' registros \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u00fanicos';
 
-| Clave | Contenido |
-|---|---|
-| `udelar_v3` | IDs de las inscripciones activas |
-| `udelar_v3_materias` | Array de materias completo |
-| `udelar_hidden` | Nombres de materias ocultas |
-| `aviso_privacidad_aceptado` | Preferencia del aviso de privacidad |
+  var chips = document.getElementById('previewChips');
+  chips.innerHTML =
+    nombres.map(function(n){ return '<span class="chip">'+n+'</span>'; }).join('') +
+    tipos.map(function(t){ return '<span class="chip '+(t==='Teorico'?'teorico':'practico')+'">'+t+'</span>'; }).join('');
+  previewSec.classList.add('visible');
+  btnApply.disabled = false;
+}
 
-Los datos **no se envían a ningún servidor**. Limpiar el `localStorage` del navegador restablece todo.
+function applyArray() {
+  if (!parsedArray) return;
+  try {
+    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(parsedArray));
+    localStorage.removeItem('udelar_v3');
+  } catch(e) {
+    alert('No se pudo guardar en localStorage: ' + e.message);
+    return;
+  }
+  var nombres = [...new Set(parsedArray.map(function(m){ return m.nombre; }))];
+  var grupos  = new Set(parsedArray.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+  document.getElementById('successTitle').textContent = '\u2713 Array guardado correctamente';
+  document.getElementById('successDesc').textContent  =
+    parsedArray.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
+  document.getElementById('successBanner').classList.add('visible');
+  document.getElementById('btnApply').disabled = true;
+  sessionStorage.setItem('array_recien_cargado', '1');
+}
 
----
+function clearInput() {
+  document.getElementById('arrayInput').value = '';
+  parseInput('');
+}
 
-## Agregar imagen de referencia
+// ──────────────────────────────────────────────────────────────
+// FORM MODE
+// ──────────────────────────────────────────────────────────────
+var formClases = [];
 
-En `index.html`, buscá el div con `id="imgPlaceholder"` dentro de la pestaña "Cómo generar mi array" y reemplazalo con tu imagen:
+function addClaseManual() {
+  var nombre = document.getElementById('f-nombre').value.trim();
+  var grupo  = document.getElementById('f-grupo').value.trim();
+  var tipo   = document.getElementById('f-tipo').value;
+  var salon  = document.getElementById('f-salon').value.trim();
+  var dia    = document.getElementById('f-dia').value;
+  var inicio = document.getElementById('f-inicio').value;
+  var fin    = document.getElementById('f-fin').value;
+  var errEl  = document.getElementById('formError');
 
-```html
-<!-- Reemplazar esto: -->
-<div class="image-placeholder" id="imgPlaceholder"> ... </div>
+  // Resetear estado
+  ['f-nombre','f-grupo','f-tipo','f-salon','f-dia','f-inicio','f-fin'].forEach(function(id) {
+    document.getElementById(id).classList.remove('err','ok');
+  });
+  errEl.classList.remove('visible');
+  errEl.textContent = '';
 
-<!-- Por esto: -->
-<img src="mi-horario.png" style="width:100%;border-radius:4px;border:1px solid var(--border)">
-```
+  // Validaciones
+  var errors = [];
+  if (!nombre) { document.getElementById('f-nombre').classList.add('err'); errors.push('nombre de materia'); }
+  if (!grupo)  { document.getElementById('f-grupo').classList.add('err');  errors.push('grupo'); }
+  if (!tipo)   { document.getElementById('f-tipo').classList.add('err');   errors.push('tipo'); }
+  if (!salon)  { document.getElementById('f-salon').classList.add('err');  errors.push('sal\u00f3n'); }
+  if (!dia)    { document.getElementById('f-dia').classList.add('err');    errors.push('d\u00eda'); }
+  if (!inicio) { document.getElementById('f-inicio').classList.add('err'); errors.push('hora inicio'); }
+  if (!fin)    { document.getElementById('f-fin').classList.add('err');    errors.push('hora fin'); }
+  if (inicio && fin && inicio >= fin) {
+    document.getElementById('f-inicio').classList.add('err');
+    document.getElementById('f-fin').classList.add('err');
+    errors.push('la hora de fin debe ser posterior al inicio');
+  }
 
----
+  if (errors.length > 0) {
+    errEl.textContent = 'Falta completar o corregir: ' + errors.join(', ') + '.';
+    errEl.classList.add('visible');
+    return;
+  }
 
-## Dependencias externas
+  // OK — agregar
+  formClases.push({
+    id: formClases.length + 1,
+    nombre: nombre, tipo: tipo, grupo: grupo,
+    salon: salon, dia: dia, inicio: inicio, fin: fin
+  });
 
-- [IBM Plex Sans + IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Sans) — cargadas desde Google Fonts
-- Sin frameworks, sin npm, sin build step
+  // Actualizar autocompletado con nombres ya usados
+  var dl = document.getElementById('sugerencias-nombre');
+  var existentes = new Set([...dl.querySelectorAll('option')].map(function(o){ return o.value; }));
+  if (!existentes.has(nombre)) {
+    var opt = document.createElement('option'); opt.value = nombre; dl.appendChild(opt);
+  }
 
----
+  renderFormList();
 
-## Compatibilidad
+  // Limpiar sólo día y hora (mantener nombre/grupo/tipo/salón para facilitar carga de varios días)
+  document.getElementById('f-dia').value   = '';
+  document.getElementById('f-inicio').value = '';
+  document.getElementById('f-fin').value    = '';
 
-Funciona en cualquier navegador moderno con soporte de `localStorage` y ES6. No requiere conexión a internet una vez descargado (excepto para cargar las fuentes de Google Fonts).
+  // Marcar los campos fijos como ok brevemente y moverle el foco al día
+  ['f-nombre','f-grupo','f-tipo','f-salon'].forEach(function(id) {
+    document.getElementById(id).classList.add('ok');
+    setTimeout(function(){ document.getElementById(id).classList.remove('ok'); }, 600);
+  });
+  setTimeout(function(){ document.getElementById('f-dia').focus(); }, 80);
+}
+
+function removeClase(idx) {
+  formClases.splice(idx, 1);
+  // Re-numerar IDs
+  formClases = formClases.map(function(c, i){ return Object.assign({}, c, { id: i + 1 }); });
+  renderFormList();
+}
+
+function renderFormList() {
+  var container   = document.getElementById('clasesList');
+  var actionsBar  = document.getElementById('formActionsBar');
+  var counter     = document.getElementById('formCounter');
+  var successBF   = document.getElementById('successBannerForm');
+
+  successBF.classList.remove('visible');
+
+  if (formClases.length === 0) {
+    container.innerHTML = '<div class="clases-empty">Todav\u00eda no agreg\u00e1s ninguna clase.<br>Complet\u00e1 el formulario de arriba y hac\u00e9 clic en \u201cAgregar\u201d.</div>';
+    actionsBar.style.display = 'none';
+    return;
+  }
+
+  var DIA_DISPLAY  = { Lunes:'Lunes', Martes:'Martes', Miercoles:'Mi\u00e9rcoles', Jueves:'Jueves', Viernes:'Viernes' };
+  var TIPO_DISPLAY = { Teorico:'Te\u00f3rico', Practico:'Pr\u00e1ctico' };
+
+  container.innerHTML = '<div class="clases-list">' + formClases.map(function(c, i) {
+    return '<div class="clase-item">' +
+      '<div class="clase-item-text">' +
+        '<div class="clase-item-nombre">' + esc(c.nombre) + ' &mdash; ' + esc(c.grupo) + '</div>' +
+        '<div class="clase-item-meta">' +
+          (TIPO_DISPLAY[c.tipo] || esc(c.tipo)) + ' &nbsp;&middot;&nbsp; ' +
+          (DIA_DISPLAY[c.dia]  || esc(c.dia))  + ' &nbsp;&middot;&nbsp; ' +
+          esc(c.inicio) + '&ndash;' + esc(c.fin) + ' &nbsp;&middot;&nbsp; ' + esc(c.salon) +
+        '</div>' +
+      '</div>' +
+      '<button class="clase-item-remove" onclick="removeClase(' + i + ')" title="Eliminar">&#10005;</button>' +
+    '</div>';
+  }).join('') + '</div>';
+
+  var n = formClases.length;
+  counter.textContent = n + ' clase' + (n !== 1 ? 's' : '') + ' agregada' + (n !== 1 ? 's' : '');
+  actionsBar.style.display = 'flex';
+}
+
+function applyForm() {
+  if (formClases.length === 0) return;
+  try {
+    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(formClases));
+    localStorage.removeItem('udelar_v3');
+  } catch(e) {
+    alert('No se pudo guardar en localStorage: ' + e.message);
+    return;
+  }
+  var nombres = [...new Set(formClases.map(function(m){ return m.nombre; }))];
+  var grupos  = new Set(formClases.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+  document.getElementById('successTitleForm').textContent = '\u2713 Clases guardadas correctamente';
+  document.getElementById('successDescForm').textContent  =
+    formClases.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
+  document.getElementById('successBannerForm').classList.add('visible');
+  document.getElementById('formActionsBar').style.display = 'none';
+  sessionStorage.setItem('array_recien_cargado', '1');
+}
+
+function clearForm() {
+  if (formClases.length > 0 && !confirm('¿Seguro que querés descartar todas las clases ingresadas?')) return;
+  formClases = [];
+  renderFormList();
+  ['f-nombre','f-grupo','f-tipo','f-salon','f-dia','f-inicio','f-fin'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('err','ok');
+  });
+  document.getElementById('formError').classList.remove('visible');
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init lista vacía
+renderFormList();
+</script>
+<script src="aviso-privacidad.js"></script>
+</body>
+</html>
