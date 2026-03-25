@@ -282,6 +282,24 @@ header { background: var(--accent); color: white; border-bottom: 3px solid var(-
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Cronograma de horarios</div>
+          <div class="card-subtitle">Descarg&aacute; tu horario semanal en PDF.</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;margin-bottom:14px">
+          Genera un PDF con el estilo de tu horario, organizado por d&iacute;a, con materia, sede y sal&oacute;n.
+        </div>
+        <button class="btn-primary" id="btnCronograma" onclick="generarCronogramaPDF()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="info-block">
         <div class="info-block-title">&#9432; N&uacute;mero de control</div>
@@ -719,6 +737,168 @@ function esc(str) {
 
 // ── INIT ──────────────────────────────────────────────────────────────
 init();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ── CRONOGRAMA PDF ────────────────────────────────────────────────────
+function generarCronogramaPDF() {
+  var grupos = buildGrupos();
+  if (grupos.length === 0) {
+    showToast('No hay materias inscriptas para generar el cronograma', 'warning');
+    return;
+  }
+
+  var btn = document.getElementById('btnCronograma');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Generando...';
+
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    // ── Paleta ──────────────────────────────────────────────────────
+    var COLOR_BG       = [245, 240, 248];   // lila muy claro (fondo página)
+    var COLOR_HEADER   = [180, 150, 190];   // lila encabezado título
+    var COLOR_SECTION  = [190, 160, 200];   // lila sección por día
+    var COLOR_ROW_ALT  = [230, 218, 238];   // lila claro filas alternas
+    var COLOR_WHITE    = [255, 255, 255];
+    var COLOR_TEXT     = [30, 20, 30];
+    var COLOR_MUTED    = [100, 80, 110];
+    var COLOR_BORDER   = [200, 180, 210];
+
+    var PW = 210, PH = 297;
+    var ML = 14, MR = 14, MT = 14;
+    var CW = PW - ML - MR;  // ancho de contenido
+
+    // ── Fondo general ───────────────────────────────────────────────
+    doc.setFillColor(...COLOR_BG);
+    doc.rect(0, 0, PW, PH, 'F');
+
+    var y = MT;
+
+    // ── Bloque título ────────────────────────────────────────────────
+    var titleH = 22;
+    doc.setFillColor(...COLOR_HEADER);
+    doc.roundedRect(ML, y, CW, titleH, 4, 4, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(...COLOR_WHITE);
+    doc.text('HORARIOS', PW / 2, y + 14, { align: 'center' });
+
+    y += titleH + 8;
+
+    // ── Agrupar clases por día ───────────────────────────────────────
+    var DAY_ORD = ['Lunes','Martes','Miercoles','Jueves','Viernes'];
+    var DAY_DIS = { Lunes:'LUNES', Martes:'MARTES', Miercoles:'MI\u00c9RCOLES', Jueves:'JUEVES', Viernes:'VIERNES' };
+
+    // Construir mapa día → filas
+    var byDay = {};
+    DAY_ORD.forEach(function(d) { byDay[d] = []; });
+    grupos.forEach(function(g) {
+      g.clases.forEach(function(c) {
+        byDay[c.dia].push({
+          nombre: g.nombre.toUpperCase(),
+          horario: c.inicio + ' - ' + c.fin,
+          sede: (g.salon.toLowerCase().includes('virtual') ? 'VIRTUAL' : 'UDELAR'),
+          salon: g.salon.toUpperCase()
+        });
+      });
+    });
+
+    // ── Columnas de la tabla ─────────────────────────────────────────
+    var cols = [
+      { label: 'MATERIA',  x: ML,           w: CW * 0.35 },
+      { label: 'HORARIO',  x: ML + CW*0.35, w: CW * 0.22 },
+      { label: 'SEDE',     x: ML + CW*0.57, w: CW * 0.18 },
+      { label: 'SAL\u00d3N', x: ML + CW*0.75, w: CW * 0.25 },
+    ];
+    var rowH  = 9;
+    var headH = 7;
+
+    DAY_ORD.forEach(function(dia) {
+      var filas = byDay[dia];
+      if (filas.length === 0) return;
+
+      // Espacio necesario: cabecera día + cabecera columnas + filas
+      var needed = 8 + headH + filas.length * rowH + 6;
+      if (y + needed > PH - 14) {
+        doc.addPage();
+        doc.setFillColor(...COLOR_BG);
+        doc.rect(0, 0, PW, PH, 'F');
+        y = MT;
+      }
+
+      // Cabecera del día
+      doc.setFillColor(...COLOR_SECTION);
+      doc.roundedRect(ML, y, CW, 8, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR_WHITE);
+      doc.text(DAY_DIS[dia] || dia.toUpperCase(), ML + 5, y + 5.5);
+      y += 8;
+
+      // Cabecera columnas
+      doc.setFillColor(...COLOR_WHITE);
+      doc.rect(ML, y, CW, headH, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLOR_MUTED);
+      cols.forEach(function(col) {
+        doc.text(col.label, col.x + 3, y + 5);
+      });
+      // Línea inferior cabecera
+      doc.setDrawColor(...COLOR_BORDER);
+      doc.setLineWidth(0.3);
+      doc.line(ML, y + headH, ML + CW, y + headH);
+      y += headH;
+
+      // Filas de datos
+      filas.forEach(function(fila, idx) {
+        var bg = idx % 2 === 0 ? COLOR_WHITE : COLOR_ROW_ALT;
+        doc.setFillColor(...bg);
+        doc.rect(ML, y, CW, rowH, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...COLOR_TEXT);
+
+        var values = [fila.nombre, fila.horario, fila.sede, fila.salon];
+        cols.forEach(function(col, ci) {
+          var txt = values[ci] || '';
+          // Truncar si no cabe
+          var maxW = col.w - 6;
+          var truncated = doc.splitTextToSize(txt, maxW)[0] || txt;
+          doc.text(truncated, col.x + 3, y + 6);
+        });
+
+        // Línea separadora
+        doc.setDrawColor(...COLOR_BORDER);
+        doc.setLineWidth(0.15);
+        doc.line(ML, y + rowH, ML + CW, y + rowH);
+        y += rowH;
+      });
+
+      y += 7; // espacio entre días
+    });
+
+    // ── Pie de página ────────────────────────────────────────────────
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...COLOR_MUTED);
+    doc.text('Generado desde el Sistema de Inscripci\u00f3n no oficial de Udelar \u00b7 ' + new Date().toLocaleDateString('es-UY'), PW / 2, PH - 8, { align: 'center' });
+
+    doc.save('cronograma-udelar.pdf');
+    showToast('\u2713 Cronograma descargado', 'success');
+
+  } catch(e) {
+    showToast('Error al generar el PDF: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Descargar PDF';
+  }
+}
 </script>
 <script src="aviso-privacidad.js"></script>
 </body>
