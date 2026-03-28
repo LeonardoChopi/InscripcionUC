@@ -4,16 +4,182 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cargar Materias — Udelar</title>
-<meta name="author" content="Leonardo Chopitea">
-<meta property="og:url" content="https://github.com/LeonardoChopi">
-<link rel="source" href="https://github.com/LeonardoChopi/InscripcionUC">
-<meta name="description" content="Cargá tus materias de Udelar ingresándolas manualmente o pegando un array JavaScript generado con IA. Los datos se guardan localmente en tu navegador.">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="stylecargar.css">
 <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
 <style>
 /* ── MODE SELECTOR ─────────────────────────────────── */
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.mode-card {
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  user-select: none;
+}
+.mode-card:hover { border-color: var(--accent2); box-shadow: 0 2px 12px rgba(26,58,92,.1); }
+.mode-card.active { border-color: var(--accent); background: #f0f5fa; box-shadow: 0 2px 12px rgba(26,58,92,.12); }
+.mode-card-icon {
+  width: 36px; height: 36px; border-radius: 5px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.mode-card.active .mode-card-icon { background: #dce9f5; border-color: #a8c8e8; }
+.mode-card-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.mode-card-desc  { font-size: .76rem; color: var(--text-muted); line-height: 1.5; }
+.mode-badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 2px;
+  display: inline-block; margin-top: 5px;
+}
+.mode-badge-avanzado { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.mode-badge-facil    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
 
+/* ── PANEL VISIBILITY ──────────────────────────────── */
+.mode-panel { display: none; }
+.mode-panel.visible { display: block; }
+
+/* ── FORM STYLES ───────────────────────────────────── */
+.form-section-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 12px; margin-top: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.form-section-title:first-child { margin-top: 0; }
+.form-row { display: grid; gap: 10px; margin-bottom: 10px; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .67rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+}
+.form-input, .form-select {
+  padding: 8px 10px; font-family: 'IBM Plex Sans', sans-serif; font-size: .84rem;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--surface); color: var(--text); outline: none;
+  transition: border-color .15s; width: 100%;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent2); }
+.form-input.err, .form-select.err { border-color: var(--red) !important; }
+.form-input.ok,  .form-select.ok  { border-color: #3a8a5c !important; }
+
+.btn-add-class {
+  font-family: 'IBM Plex Mono', monospace; font-size: .74rem; letter-spacing: .04em;
+  padding: 9px 16px; background: var(--accent); color: white; border: none;
+  border-radius: 3px; cursor: pointer; transition: background .15s;
+  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+}
+.btn-add-class:hover { background: var(--accent2); }
+
+.form-inline-error {
+  font-size: .74rem; color: var(--red); font-family: 'IBM Plex Mono', monospace;
+  margin-top: 6px; display: none;
+  background: #faeaea; border: 1px solid #e0b0b0; border-radius: 3px;
+  padding: 8px 12px; line-height: 1.5;
+}
+.form-inline-error.visible { display: block; }
+
+/* ── CLASES LIST ───────────────────────────────────── */
+.clases-list { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+.clase-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 4px; font-size: .81rem;
+  animation: fadeIn .2s ease;
+}
+.clase-item-text { flex: 1; line-height: 1.45; }
+.clase-item-nombre { font-weight: 600; color: var(--text); }
+.clase-item-meta { color: var(--text-muted); font-size: .75rem; margin-top: 2px; }
+.clase-item-remove {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 3px 6px; border-radius: 2px; font-size: .85rem;
+  transition: color .12s, background .12s; flex-shrink: 0;
+}
+.clase-item-remove:hover { color: var(--red); background: #faeaea; }
+
+.clases-empty {
+  text-align: center; padding: 24px 16px;
+  border: 1px dashed var(--border); border-radius: 4px;
+  color: var(--text-muted); font-size: .8rem; line-height: 1.65; margin-top: 4px;
+}
+
+/* ── FORM ACTIONS BAR ──────────────────────────────── */
+.form-actions-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--surface2);
+}
+.form-counter { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--text-muted); flex: 1; }
+
+/* ── CATEGORÍAS GUARDADAS ───────────────────────────── */
+.cats-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.cat-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.cat-item-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+.cat-item-body { flex: 1; }
+.cat-item-nombre { font-size: .86rem; font-weight: 600; color: var(--text); }
+.cat-item-meta { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: var(--text-muted); margin-top: 2px; }
+.cat-item-remove {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 4px 6px; border-radius: 2px; font-size: .85rem; flex-shrink: 0;
+  transition: color .12s, background .12s;
+}
+.cat-item-remove:hover { color: var(--red); background: #faeaea; }
+.cats-empty { text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 4px; color: var(--text-muted); font-size: .79rem; margin-top: 4px; }
+
+/* ── MODAL CATEGORÍA ────────────────────────────────── */
+#catModalOverlay {
+  position: fixed; inset: 0; background: rgba(10,20,35,0.55);
+  backdrop-filter: blur(3px); z-index: 99998;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+#catModalBox {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+  max-width: 420px; width: 100%; padding: 26px 28px;
+  animation: catSlideUp .22s cubic-bezier(.22,1,.36,1);
+}
+@keyframes catSlideUp { from { transform:translateY(14px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+#catModalBox h3 { font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
+#catModalBox p  { font-size: .78rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+#catModalInput {
+  width: 100%; padding: 9px 11px; font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .88rem; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--surface); color: var(--text); outline: none;
+  transition: border-color .15s; margin-bottom: 6px;
+}
+#catModalInput:focus { border-color: var(--accent2); }
+#catModalInput.err  { border-color: var(--red) !important; }
+#catModalErr { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--red); display: none; margin-bottom: 12px; }
+#catModalErr.visible { display: block; }
+.cat-modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.cat-modal-btns .btn-apply { padding: 9px 22px; width: auto; }
+.cat-modal-btns .btn-clear { padding: 9px 16px; }
+
+/* ── RESPONSIVE ────────────────────────────────────── */
+@media (max-width: 760px) {
+  .mode-selector { grid-template-columns: 1fr; }
+  .form-row-4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .form-row-2, .form-row-3, .form-row-4 { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -305,7 +471,7 @@
     </div>
 
     <!-- Almacenamiento (siempre visible) -->
-    <div class="card">
+    <div class="card" style="margin-bottom:16px">
       <div class="info-block">
         <div class="info-block-title">&#9432; Sobre el almacenamiento</div>
         <div style="font-size:.8rem;color:var(--text-muted);line-height:1.6;">
@@ -317,14 +483,184 @@
         </div>
       </div>
     </div>
+
+    <!-- Categorías guardadas -->
+    <div class="section-title" style="margin-bottom:12px">Categor&iacute;as guardadas</div>
+    <div id="catsSavedContainer"></div>
   </div>
 
 </div><!-- /page -->
 
+<!-- ── MODAL: NOMBRE DE CATEGORÍA ── -->
+<div id="catModalOverlay" style="display:none">
+  <div id="catModalBox">
+    <h3>Poné un nombre a esta categor&iacute;a</h3>
+    <p>Ese nombre te va a aparecer como etiqueta en el sistema de inscripci&oacute;n. Por ejemplo: <strong>&ldquo;MI2&rdquo;</strong>, <strong>&ldquo;F&iacute;sica 1&rdquo;</strong> o <strong>&ldquo;Subido 1&rdquo;</strong>.</p>
+    <input id="catModalInput" type="text" placeholder="ej: Física 1, MI2, CDIV 2&hellip;" maxlength="60"
+           onkeydown="if(event.key==='Enter') confirmarCategoria(); if(event.key==='Escape') cerrarModalCat();">
+    <div id="catModalErr">Ingres&aacute; un nombre para continuar.</div>
+    <div class="cat-modal-btns">
+      <button class="btn-clear" onclick="cerrarModalCat()">Cancelar</button>
+      <button class="btn-apply" onclick="confirmarCategoria()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
-const LS_KEY_MATERIAS = 'udelar_v3_materias';
+// ── CLAVE DE ALMACENAMIENTO ───────────────────────────────────────────
+// Formato nuevo: { categorias: [{id, nombre, datos:[]}] }
+const LS_KEY_CATS     = 'udelar_v3_categorias';
+const LS_KEY_MATERIAS = 'udelar_v3_materias'; // legacy — se migra al cargar
 const REQUIRED_FIELDS = ['id','nombre','tipo','grupo','salon','dia','inicio','fin'];
 let parsedArray = null;
+
+// ── HELPERS MULTI-CATEGORÍA ───────────────────────────────────────────
+function loadCategorias() {
+  try {
+    var raw = localStorage.getItem(LS_KEY_CATS);
+    if (raw) return JSON.parse(raw) || [];
+  } catch(e) {}
+  // Migrar formato legacy si existe
+  try {
+    var leg = localStorage.getItem(LS_KEY_MATERIAS);
+    if (leg) {
+      var arr = JSON.parse(leg);
+      if (Array.isArray(arr) && arr.length > 0) {
+        var cats = [{ id: Date.now(), nombre: 'Importado', datos: arr }];
+        saveCategorias(cats);
+        localStorage.removeItem(LS_KEY_MATERIAS);
+        return cats;
+      }
+    }
+  } catch(e) {}
+  return [];
+}
+
+function saveCategorias(cats) {
+  try {
+    localStorage.setItem(LS_KEY_CATS, JSON.stringify(cats));
+    // Actualizar también udelar_v3_materias con el merge de todas las categorías
+    // para que index.html (que aún lee esa clave) funcione
+    var merged = cats.flatMap(function(c) { return c.datos; });
+    // Re-numerar IDs globalmente para evitar duplicados
+    merged = merged.map(function(m, i) { return Object.assign({}, m, { id: i + 1 }); });
+    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(merged));
+  } catch(e) {}
+}
+
+function agregarCategoria(nombre, datos) {
+  var cats = loadCategorias();
+  // Re-numerar IDs del array entrante desde el máximo global actual
+  var merged = cats.flatMap(function(c){ return c.datos; });
+  var maxId  = merged.reduce(function(m, x){ return Math.max(m, x.id||0); }, 0);
+  datos = datos.map(function(d, i){ return Object.assign({}, d, { id: maxId + i + 1 }); });
+  cats.push({ id: Date.now(), nombre: nombre, datos: datos });
+  saveCategorias(cats);
+  return cats;
+}
+
+function eliminarCategoria(catId) {
+  var cats = loadCategorias().filter(function(c){ return c.id !== catId; });
+  saveCategorias(cats);
+  localStorage.removeItem('udelar_v3'); // limpiar inscripciones ya que los IDs cambiaron
+  renderCatsSaved();
+}
+
+// ── RENDER CATEGORÍAS GUARDADAS ───────────────────────────────────────
+function renderCatsSaved() {
+  var container = document.getElementById('catsSavedContainer');
+  var cats = loadCategorias();
+  if (cats.length === 0) {
+    container.innerHTML = '<div class="cats-empty">Todav&iacute;a no cargaste ninguna categor&iacute;a.</div>';
+    return;
+  }
+  var COLORS = ['#1a3a5c','#1d5c3a','#0f4c51','#4a1a6b','#6b5000','#8b1a1a'];
+  container.innerHTML = '<div class="cats-list">' + cats.map(function(c, i) {
+    var nombres = [...new Set(c.datos.map(function(m){ return m.nombre; }))];
+    var color   = COLORS[i % COLORS.length];
+    return '<div class="cat-item">' +
+      '<div class="cat-item-dot" style="background:' + color + '"></div>' +
+      '<div class="cat-item-body">' +
+        '<div class="cat-item-nombre">' + escH(c.nombre) + '</div>' +
+        '<div class="cat-item-meta">' + c.datos.length + ' clases &middot; ' + nombres.length + ' materia(s)</div>' +
+      '</div>' +
+      '<button class="cat-item-remove" onclick="confirmarEliminar(' + c.id + ')" title="Eliminar">&#10005;</button>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function confirmarEliminar(catId) {
+  var cats = loadCategorias();
+  var cat  = cats.find(function(c){ return c.id === catId; });
+  if (!cat) return;
+  if (!confirm('¿Eliminás la categoría "' + cat.nombre + '"? Las inscripciones activas también se limpiarán.')) return;
+  eliminarCategoria(catId);
+}
+
+// ── MODAL NOMBRE CATEGORÍA ────────────────────────────────────────────
+var _pendingDatos = null; // array a guardar una vez confirmado el nombre
+
+function abrirModalCat(datos) {
+  _pendingDatos = datos;
+  var inp = document.getElementById('catModalInput');
+  inp.value = '';
+  inp.classList.remove('err');
+  document.getElementById('catModalErr').classList.remove('visible');
+  document.getElementById('catModalOverlay').style.display = 'flex';
+  setTimeout(function(){ inp.focus(); }, 80);
+}
+
+function cerrarModalCat() {
+  document.getElementById('catModalOverlay').style.display = 'none';
+  _pendingDatos = null;
+}
+
+function confirmarCategoria() {
+  var nombre = document.getElementById('catModalInput').value.trim();
+  var inp    = document.getElementById('catModalInput');
+  var errEl  = document.getElementById('catModalErr');
+  inp.classList.remove('err');
+  errEl.classList.remove('visible');
+  if (!nombre) {
+    inp.classList.add('err');
+    errEl.classList.add('visible');
+    inp.focus();
+    return;
+  }
+  if (!_pendingDatos || _pendingDatos.length === 0) { cerrarModalCat(); return; }
+
+  agregarCategoria(nombre, _pendingDatos);
+  cerrarModalCat();
+  renderCatsSaved();
+  refreshNombresSelect();
+  sessionStorage.setItem('array_recien_cargado', '1');
+
+  // Mostrar banner de éxito en el panel activo
+  var nombres = [...new Set(_pendingDatos.map(function(m){ return m.nombre; }))];
+  var grupos  = new Set(_pendingDatos.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
+  var desc    = _pendingDatos.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos';
+
+  var activePanel = document.querySelector('.mode-panel.visible');
+  if (activePanel && activePanel.id === 'panelScript') {
+    document.getElementById('successTitle').textContent = '\u2713 Categor\u00eda \u201c' + nombre + '\u201d guardada';
+    document.getElementById('successDesc').textContent  = desc + ' \u2014 disponible en el sistema.';
+    document.getElementById('successBanner').classList.add('visible');
+    document.getElementById('btnApply').disabled = true;
+  } else {
+    document.getElementById('successTitleForm').textContent = '\u2713 Categor\u00eda \u201c' + nombre + '\u201d guardada';
+    document.getElementById('successDescForm').textContent  = desc + ' \u2014 disponible en el sistema.';
+    document.getElementById('successBannerForm').classList.add('visible');
+    document.getElementById('formActionsBar').style.display = 'none';
+  }
+}
+
+// Cerrar modal con clic fuera
+document.getElementById('catModalOverlay').addEventListener('click', function(e){
+  if (e.target === this) cerrarModalCat();
+});
 
 // ──────────────────────────────────────────────────────────────
 // MODE SWITCH
@@ -427,21 +763,7 @@ function parseInput(raw) {
 
 function applyArray() {
   if (!parsedArray) return;
-  try {
-    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(parsedArray));
-    localStorage.removeItem('udelar_v3');
-  } catch(e) {
-    alert('No se pudo guardar en localStorage: ' + e.message);
-    return;
-  }
-  var nombres = [...new Set(parsedArray.map(function(m){ return m.nombre; }))];
-  var grupos  = new Set(parsedArray.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
-  document.getElementById('successTitle').textContent = '\u2713 Array guardado correctamente';
-  document.getElementById('successDesc').textContent  =
-    parsedArray.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
-  document.getElementById('successBanner').classList.add('visible');
-  document.getElementById('btnApply').disabled = true;
-  sessionStorage.setItem('array_recien_cargado', '1');
+  abrirModalCat(parsedArray);
 }
 
 function clearInput() {
@@ -464,14 +786,12 @@ function addClaseManual() {
   var fin    = document.getElementById('f-fin').value;
   var errEl  = document.getElementById('formError');
 
-  // Resetear estado
   ['f-nombre','f-grupo','f-tipo','f-salon','f-dia','f-inicio','f-fin'].forEach(function(id) {
     document.getElementById(id).classList.remove('err','ok');
   });
   errEl.classList.remove('visible');
   errEl.textContent = '';
 
-  // Validaciones
   var errors = [];
   if (!nombre) { document.getElementById('f-nombre').classList.add('err'); errors.push('nombre de materia'); }
   if (!grupo)  { document.getElementById('f-grupo').classList.add('err');  errors.push('grupo'); }
@@ -492,7 +812,6 @@ function addClaseManual() {
     return;
   }
 
-  // OK — agregar
   formClases.push({
     id: formClases.length + 1,
     nombre: nombre, tipo: tipo, grupo: grupo,
@@ -501,12 +820,10 @@ function addClaseManual() {
 
   renderFormList();
 
-  // Limpiar sólo día y hora (mantener nombre/grupo/tipo/salón para facilitar carga de varios días)
   document.getElementById('f-dia').value    = '';
   document.getElementById('f-inicio').value = '';
   document.getElementById('f-fin').value    = '';
 
-  // Marcar los campos fijos como ok brevemente y moverle el foco al día
   ['f-nombre','f-grupo','f-tipo','f-salon'].forEach(function(id) {
     document.getElementById(id).classList.add('ok');
     setTimeout(function(){ document.getElementById(id).classList.remove('ok'); }, 600);
@@ -514,28 +831,14 @@ function addClaseManual() {
   setTimeout(function(){ document.getElementById('f-dia').focus(); }, 80);
 }
 
-// ── Poblar el datalist de nombres desde localStorage + clases ya ingresadas ──
 function refreshNombresSelect() {
   var dl = document.getElementById('sugerencias-nombre');
-
-  // Fuente 1: materias guardadas en localStorage
-  var lsNombres = [];
-  try {
-    var raw = localStorage.getItem(LS_KEY_MATERIAS);
-    if (raw) {
-      var arr = JSON.parse(raw);
-      if (Array.isArray(arr)) lsNombres = arr.map(function(m){ return m.nombre; });
-    }
-  } catch(e) {}
-
-  // Fuente 2: clases ya ingresadas en este formulario
+  var cats = loadCategorias();
+  var lsNombres = cats.flatMap(function(c){ return c.datos.map(function(m){ return m.nombre; }); });
   var formNombres = formClases.map(function(c){ return c.nombre; });
-
-  // Unión sin duplicados, ordenada
   var todos = [...new Set(lsNombres.concat(formNombres))].sort(function(a,b){
     return a.localeCompare(b, 'es');
   });
-
   dl.innerHTML = '';
   todos.forEach(function(n) {
     var opt = document.createElement('option');
@@ -546,20 +849,17 @@ function refreshNombresSelect() {
 
 function removeClase(idx) {
   formClases.splice(idx, 1);
-  // Re-numerar IDs
   formClases = formClases.map(function(c, i){ return Object.assign({}, c, { id: i + 1 }); });
   renderFormList();
 }
 
 function renderFormList() {
-  var container   = document.getElementById('clasesList');
-  var actionsBar  = document.getElementById('formActionsBar');
-  var counter     = document.getElementById('formCounter');
-  var successBF   = document.getElementById('successBannerForm');
+  var container  = document.getElementById('clasesList');
+  var actionsBar = document.getElementById('formActionsBar');
+  var counter    = document.getElementById('formCounter');
+  var successBF  = document.getElementById('successBannerForm');
 
   successBF.classList.remove('visible');
-
-  // Mantener el select de nombres actualizado
   refreshNombresSelect();
 
   if (formClases.length === 0) {
@@ -574,11 +874,11 @@ function renderFormList() {
   container.innerHTML = '<div class="clases-list">' + formClases.map(function(c, i) {
     return '<div class="clase-item">' +
       '<div class="clase-item-text">' +
-        '<div class="clase-item-nombre">' + esc(c.nombre) + ' &mdash; ' + esc(c.grupo) + '</div>' +
+        '<div class="clase-item-nombre">' + escH(c.nombre) + ' &mdash; ' + escH(c.grupo) + '</div>' +
         '<div class="clase-item-meta">' +
-          (TIPO_DISPLAY[c.tipo] || esc(c.tipo)) + ' &nbsp;&middot;&nbsp; ' +
-          (DIA_DISPLAY[c.dia]  || esc(c.dia))  + ' &nbsp;&middot;&nbsp; ' +
-          esc(c.inicio) + '&ndash;' + esc(c.fin) + ' &nbsp;&middot;&nbsp; ' + esc(c.salon) +
+          (TIPO_DISPLAY[c.tipo] || escH(c.tipo)) + ' &nbsp;&middot;&nbsp; ' +
+          (DIA_DISPLAY[c.dia]  || escH(c.dia))  + ' &nbsp;&middot;&nbsp; ' +
+          escH(c.inicio) + '&ndash;' + escH(c.fin) + ' &nbsp;&middot;&nbsp; ' + escH(c.salon) +
         '</div>' +
       '</div>' +
       '<button class="clase-item-remove" onclick="removeClase(' + i + ')" title="Eliminar">&#10005;</button>' +
@@ -592,21 +892,7 @@ function renderFormList() {
 
 function applyForm() {
   if (formClases.length === 0) return;
-  try {
-    localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(formClases));
-    localStorage.removeItem('udelar_v3');
-  } catch(e) {
-    alert('No se pudo guardar en localStorage: ' + e.message);
-    return;
-  }
-  var nombres = [...new Set(formClases.map(function(m){ return m.nombre; }))];
-  var grupos  = new Set(formClases.map(function(m){ return m.nombre+'||'+m.tipo+'||'+m.grupo; })).size;
-  document.getElementById('successTitleForm').textContent = '\u2713 Clases guardadas correctamente';
-  document.getElementById('successDescForm').textContent  =
-    formClases.length + ' clases \u00b7 ' + nombres.length + ' materia(s) \u00b7 ' + grupos + ' grupos \u2014 disponible al volver al sistema.';
-  document.getElementById('successBannerForm').classList.add('visible');
-  document.getElementById('formActionsBar').style.display = 'none';
-  sessionStorage.setItem('array_recien_cargado', '1');
+  abrirModalCat(formClases.slice());
 }
 
 function clearForm() {
@@ -619,16 +905,18 @@ function clearForm() {
     el.classList.remove('err','ok');
   });
   document.getElementById('formError').classList.remove('visible');
-  // Repoblar el select (puede haber cambiado si se descartaron clases)
   refreshNombresSelect();
 }
 
-function esc(str) {
+function escH(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+// alias para compatibilidad con renderFormList
+function esc(str) { return escH(str); }
 
 // Init
+renderCatsSaved();
 refreshNombresSelect();
 renderFormList();
 </script>

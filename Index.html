@@ -4,10 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inscripción UC — Udelar</title>
-<meta name="author" content="Leonardo Chopitea">
-<meta property="og:url" content="https://github.com/LeonardoChopi">
-<link rel="source" href="https://github.com/LeonardoChopi/InscripcionUC">
-<meta name="description" content="Explorá y armá tu inscripción a unidades curriculares de Udelar sin conflictos de horario. Filtrá por día, franja y tipo, visualizá tu semana y guardá tu selección — todo en el navegador, sin servidor.">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQE-RMVN80C-sib0OsWyL0FCU3WnER7iK9Dow&s" type="image/x-icon">
@@ -37,11 +33,7 @@
     <div class="header-right">
       <a href="cargar.html" class="btn-header btn-header-outline">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        Cargar nueva materia
-      </a>
-      <a href="resumen.html" class="btn-header btn-header-outline">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Enviar resumen de inscripción
+        Cargar nuevo array
       </a>
     </div>
   </div>
@@ -278,6 +270,18 @@ function saveMaterias() {
   try { localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(materias)); } catch(e) {}
 }
 function loadMaterias() {
+  // Primero intentar nuevo formato multi-categoría
+  try {
+    const rawCats = localStorage.getItem('udelar_v3_categorias');
+    if (rawCats) {
+      const cats = JSON.parse(rawCats);
+      if (Array.isArray(cats) && cats.length > 0) {
+        const merged = cats.flatMap(c => c.datos || []);
+        if (merged.length > 0) { materias = merged; return true; }
+      }
+    }
+  } catch(e) {}
+  // Fallback: formato legacy (array plano)
   try {
     const raw = localStorage.getItem(LS_KEY_MATERIAS);
     if (!raw) return false;
@@ -571,38 +575,61 @@ function renderEjemplos() {
     }).join('');
   }
 
-  // ── Array del usuario (materias que no son de ningún ejemplo) ──
+  // ── Categorías del usuario (desde udelar_v3_categorias) ──
   const userGrid    = document.getElementById('userArrayGrid');
   const userSection = document.getElementById('userArraySection');
   if (!userGrid) return;
-  const nombresEnEjemplos = new Set(
-    (typeof EJEMPLOS_MATERIAS !== 'undefined' ? EJEMPLOS_MATERIAS : []).flatMap(e => e.datos.map(m => m.nombre))
+
+  let userCats = [];
+  try {
+    const rawCats = localStorage.getItem('udelar_v3_categorias');
+    if (rawCats) userCats = JSON.parse(rawCats) || [];
+  } catch(e) {}
+
+  // Excluir las que ya aparecen como ejemplos precargados
+  const nombresPrecargados = new Set(
+    (typeof EJEMPLOS_MATERIAS !== 'undefined' ? EJEMPLOS_MATERIAS : []).map(e => e.nombre)
   );
-  const nombresUsuario = [...nombresActivos].filter(n => !nombresEnEjemplos.has(n));
-  if (nombresUsuario.length === 0) {
+  userCats = userCats.filter(c => !nombresPrecargados.has(c.nombre));
+
+  if (userCats.length === 0) {
     if (userSection) userSection.style.display = 'none';
     userGrid.innerHTML = ''; return;
   }
   if (userSection) userSection.style.display = 'flex';
-  const grupos = new Set(materias.map(m => m.nombre+'||'+m.tipo+'||'+m.grupo)).size;
-  const togglesHtml = nombresUsuario.map(function(n) {
-    const vis = isNombreVisible(n);
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface2)">' +
-      '<span style="font-size:0.82rem;font-weight:500">' + n + '</span>' +
-      '<button class="btn-toggle-vis" onclick="toggleNombreVisibility(this.dataset.n)" data-n="' + n.replace(/"/g,'&quot;') + '" style="padding:4px 10px;font-size:0.67rem">' +
-        (vis ? eyeOnSVG() + ' Ocultar' : eyeOffSVG() + ' Mostrar') +
-      '</button>' +
+
+  const COLORS = ['#1a3a5c','#1d5c3a','#0f4c51','#4a1a6b','#6b5000','#8b1a1a'];
+
+  userGrid.innerHTML = userCats.map(function(cat, ci) {
+    const color    = COLORS[ci % COLORS.length];
+    const nombres  = [...new Set(cat.datos.map(m => m.nombre))];
+    const gruposN  = new Set(cat.datos.map(m => m.nombre+'||'+m.tipo+'||'+m.grupo)).size;
+    const togglesHtml = nombres.map(function(n) {
+      if (!nombresActivos.has(n)) return '';
+      const vis = isNombreVisible(n);
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface2)">' +
+        '<span style="font-size:0.82rem;font-weight:500">' + n + '</span>' +
+        '<button class="btn-toggle-vis" onclick="toggleNombreVisibility(this.dataset.n)" data-n="' + n.replace(/"/g,'&quot;') + '" style="padding:4px 10px;font-size:0.67rem">' +
+          (vis ? eyeOnSVG() + ' Ocultar' : eyeOffSVG() + ' Mostrar') +
+        '</button>' +
+      '</div>';
+    }).filter(Boolean).join('');
+    const hayTogglesPropios = nombres.some(n => nombresActivos.has(n));
+    return '<div class="ejemplo-card">' +
+      '<div class="ejemplo-card-header">' +
+        '<div class="ejemplo-card-dot" style="background:' + color + '"></div>' +
+        '<div class="ejemplo-card-title">' + cat.nombre + '</div>' +
+      '</div>' +
+      '<div class="ejemplo-card-desc">Cargado manualmente desde la p\u00e1gina de importaci\u00f3n.</div>' +
+      '<div class="ejemplo-card-meta">' + cat.datos.length + ' clases \u00b7 ' + gruposN + ' grupos \u00b7 ' + nombres.join(', ') + '</div>' +
+      (hayTogglesPropios
+        ? '<div style="border-top:1px solid var(--surface2);padding-top:10px;margin-top:2px">' +
+            '<div style="font-family:IBM Plex Mono,monospace;font-size:0.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Visibilidad en tabla</div>' +
+            togglesHtml +
+          '</div>'
+        : '') +
     '</div>';
   }).join('');
-  userGrid.innerHTML = '<div class="ejemplo-card">' +
-    '<div class="ejemplo-card-header"><div class="ejemplo-card-dot" style="background:var(--yellow)"></div><div class="ejemplo-card-title">Array personalizado</div></div>' +
-    '<div class="ejemplo-card-desc">Materias cargadas manualmente desde la p\u00e1gina de importaci\u00f3n.</div>' +
-    '<div class="ejemplo-card-meta">' + materias.length + ' clases \u00b7 ' + grupos + ' grupos</div>' +
-    '<div style="border-top:1px solid var(--surface2);padding-top:10px;margin-top:2px">' +
-      '<div style="font-family:IBM Plex Mono,monospace;font-size:0.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Visibilidad en tabla</div>' +
-      togglesHtml +
-    '</div>' +
-  '</div>';
 }
 
 function eyeOnSVG()  { return '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'; }
@@ -611,10 +638,44 @@ function eyeOffSVG() { return '<svg width="11" height="11" viewBox="0 0 24 24" f
 function cargarEjemplo(id) {
   const ej = EJEMPLOS_MATERIAS.find(e => e.id === id);
   if (!ej) return;
-  materias = ej.datos.slice();
-  saveMaterias();
+
+  // Guardar inscripciones actuales como claves nombre+tipo+grupo antes de re-numerar
+  const enrolledKeys = new Set(enrolled.map(e => e.nombre+'||'+e.tipo+'||'+e.grupo+'||'+e.dia));
+
+  // Leer categorías existentes
+  let cats = [];
+  try {
+    const raw = localStorage.getItem('udelar_v3_categorias');
+    if (raw) cats = JSON.parse(raw) || [];
+  } catch(e) {}
+
+  // Si ya existe esta categoría con el mismo nombre, preguntar
+  const yaExiste = cats.some(c => c.nombre === ej.nombre);
+  if (yaExiste) {
+    if (!confirm('\u00bfYa ten\u00e9s una categor\u00eda llamada \u201c' + ej.nombre + '\u201d. \u00bfAgreg\u00e1s una copia igual?')) return;
+  }
+
+  // Re-numerar IDs para no pisar los existentes
+  const mergedExist = cats.flatMap(c => c.datos || []);
+  let maxId = mergedExist.reduce((m, x) => Math.max(m, x.id || 0), 0);
+  const nuevosDatos = ej.datos.map((d, i) => Object.assign({}, d, { id: maxId + i + 1 }));
+
+  cats.push({ id: Date.now(), nombre: ej.nombre, datos: nuevosDatos });
+
+  // Guardar
+  try { localStorage.setItem('udelar_v3_categorias', JSON.stringify(cats)); } catch(e) {}
+
+  // Reconstruir materias (merge de todas las categorías)
+  const todaMerge = cats.flatMap(c => c.datos || []).map((m, i) => Object.assign({}, m, { id: i + 1 }));
+  try { localStorage.setItem('udelar_v3_materias', JSON.stringify(todaMerge)); } catch(e) {}
+
+  materias = todaMerge;
   GROUP_ROWS = buildGroupRows();
-  enrolled = []; saveToStorage();
+
+  // Restaurar inscripciones por nombre+tipo+grupo+dia en vez de por ID
+  enrolled = materias.filter(m => enrolledKeys.has(m.nombre+'||'+m.tipo+'||'+m.grupo+'||'+m.dia));
+  saveToStorage();
+
   hiddenNombres.clear(); saveHiddenNombres();
   filters = {dia:'todos',franja:'todos',tipo:'todos',ver:'todos'};
   searchQuery = ''; document.getElementById('searchInput').value = '';
@@ -622,7 +683,7 @@ function cargarEjemplo(id) {
   render();
   renderEjemplos();
   renderVisStatusBar();
-  showToast('\u2713 Cargado: '+ej.nombre+' ('+ej.datos.length+' clases)', 'success');
+  showToast('\u2713 Agregado: ' + ej.nombre + ' (' + nuevosDatos.length + ' clases)', 'success');
 }
 // ============================================================
 // PROMPT COPY
