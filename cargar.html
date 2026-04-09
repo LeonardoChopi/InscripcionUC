@@ -172,6 +172,16 @@
 .cat-modal-btns .btn-apply { padding: 9px 22px; width: auto; }
 .cat-modal-btns .btn-clear { padding: 9px 16px; }
 
+/* ── CUSTOM NOMBRE DROPDOWN ────────────────────────── */
+.nombre-sugerencia {
+  padding: 8px 12px; font-size: .84rem; cursor: pointer;
+  color: var(--text); border-bottom: 1px solid var(--surface2);
+  transition: background .1s;
+}
+.nombre-sugerencia:last-child { border-bottom: none; }
+.nombre-sugerencia:hover, .nombre-sugerencia.activo { background: #f0f5fa; }
+.nombre-sugerencia strong { color: var(--accent); font-weight: 600; }
+
 /* ── RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 760px) {
   .mode-selector { grid-template-columns: 1fr; }
@@ -304,9 +314,14 @@
           <div class="form-row form-row-2" style="margin-bottom:10px">
             <div class="form-field">
               <label class="form-label">Nombre de la materia</label>
-              <input class="form-input" id="f-nombre" type="text" placeholder="ej: F&iacute;sica 1"
-                     autocomplete="off" list="sugerencias-nombre">
-              <datalist id="sugerencias-nombre"></datalist>
+              <div style="position:relative">
+                <input class="form-input" id="f-nombre" type="text" placeholder="ej: F&iacute;sica 1"
+                       autocomplete="off"
+                       oninput="onNombreInput(this)"
+                       onblur="setTimeout(cerrarSugerencias, 150)"
+                       onkeydown="onNombreKeydown(event)">
+                <div id="nombreDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--accent2);border-top:none;border-radius:0 0 3px 3px;max-height:180px;overflow-y:auto;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>
+              </div>
             </div>
             <div class="form-field">
               <label class="form-label">Grupo</label>
@@ -542,12 +557,12 @@ function loadCategorias() {
 function saveCategorias(cats) {
   try {
     localStorage.setItem(LS_KEY_CATS, JSON.stringify(cats));
-    // Actualizar también udelar_v3_materias con el merge de todas las categorías
-    // para que index.html (que aún lee esa clave) funcione
+    // Reconstruir udelar_v3_materias como merge de todas las categorías
     var merged = cats.flatMap(function(c) { return c.datos; });
-    // Re-numerar IDs globalmente para evitar duplicados
     merged = merged.map(function(m, i) { return Object.assign({}, m, { id: i + 1 }); });
     localStorage.setItem(LS_KEY_MATERIAS, JSON.stringify(merged));
+    // Limpiar inscripciones porque los IDs cambiaron
+    localStorage.removeItem('udelar_v3');
   } catch(e) {}
 }
 
@@ -831,20 +846,74 @@ function addClaseManual() {
   setTimeout(function(){ document.getElementById('f-dia').focus(); }, 80);
 }
 
+// ── CUSTOM AUTOCOMPLETE para nombre de materia ────────────────────────
+// Nunca sobreescribe lo que escribió el usuario — solo sugiere
+var _sugerenciasNombre = [];
+var _dropdownIdx = -1;
+
 function refreshNombresSelect() {
-  var dl = document.getElementById('sugerencias-nombre');
   var cats = loadCategorias();
   var lsNombres = cats.flatMap(function(c){ return c.datos.map(function(m){ return m.nombre; }); });
   var formNombres = formClases.map(function(c){ return c.nombre; });
-  var todos = [...new Set(lsNombres.concat(formNombres))].sort(function(a,b){
+  _sugerenciasNombre = [...new Set(lsNombres.concat(formNombres))].sort(function(a,b){
     return a.localeCompare(b, 'es');
   });
-  dl.innerHTML = '';
-  todos.forEach(function(n) {
-    var opt = document.createElement('option');
-    opt.value = n;
-    dl.appendChild(opt);
+}
+
+function onNombreInput(input) {
+  var q = input.value; // NO hacer trim() aquí — respetar lo que escribe el usuario
+  refreshNombresSelect();
+  var dropdown = document.getElementById('nombreDropdown');
+  _dropdownIdx = -1;
+
+  if (!q) { dropdown.style.display = 'none'; return; }
+
+  var matches = _sugerenciasNombre.filter(function(n){
+    return n.toLowerCase().includes(q.toLowerCase());
   });
+
+  if (matches.length === 0) { dropdown.style.display = 'none'; return; }
+
+  dropdown.innerHTML = matches.map(function(n, i) {
+    var escaped = escH(n);
+    var highlighted = escaped.replace(
+      new RegExp('(' + escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
+      '<strong>$1</strong>'
+    );
+    return '<div class="nombre-sugerencia" data-value="' + escaped + '" onmousedown="elegirSugerencia(\'' + escaped.replace(/'/g,"\\'") + '\')">' + highlighted + '</div>';
+  }).join('');
+  dropdown.style.display = 'block';
+}
+
+function onNombreKeydown(e) {
+  var dropdown = document.getElementById('nombreDropdown');
+  if (dropdown.style.display === 'none') return;
+  var items = dropdown.querySelectorAll('.nombre-sugerencia');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _dropdownIdx = Math.min(_dropdownIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.classList.toggle('activo', i === _dropdownIdx); });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _dropdownIdx = Math.max(_dropdownIdx - 1, -1);
+    items.forEach(function(el, i){ el.classList.toggle('activo', i === _dropdownIdx); });
+  } else if (e.key === 'Enter' && _dropdownIdx >= 0) {
+    e.preventDefault();
+    if (items[_dropdownIdx]) elegirSugerencia(items[_dropdownIdx].dataset.value);
+  } else if (e.key === 'Escape') {
+    cerrarSugerencias();
+  }
+}
+
+function elegirSugerencia(valor) {
+  document.getElementById('f-nombre').value = valor;
+  cerrarSugerencias();
+  document.getElementById('f-grupo').focus();
+}
+
+function cerrarSugerencias() {
+  document.getElementById('nombreDropdown').style.display = 'none';
+  _dropdownIdx = -1;
 }
 
 function removeClase(idx) {
